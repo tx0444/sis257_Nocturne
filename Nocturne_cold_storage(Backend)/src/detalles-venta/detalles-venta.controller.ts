@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { DetallesVentaService } from './detalles-venta.service';
 import { CreateDetallesVentaDto } from './dto/create-detalles-venta.dto';
 import { UpdateDetallesVentaDto } from './dto/update-detalles-venta.dto';
@@ -17,18 +27,31 @@ export class DetallesVentaController {
     return this.detallesVentaService.findAll();
   }
 
+  @Get('venta/:ventaId')
+  findByVenta(@Param('ventaId', ParseIntPipe) ventaId: number) {
+    return this.detallesVentaService.findByVenta(ventaId);
+  }
+
+  @Get('mas-vendidos')
+  getProductosMasVendidos(@Query('limit') limit?: string) {
+    return this.detallesVentaService.getProductosMasVendidos(limit ? parseInt(limit) : 10);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.detallesVentaService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.detallesVentaService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDetallesVentaDto: UpdateDetallesVentaDto) {
-    return this.detallesVentaService.update(+id, updateDetallesVentaDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDetallesVentaDto: UpdateDetallesVentaDto,
+  ) {
+    return this.detallesVentaService.update(id, updateDetallesVentaDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.detallesVentaService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.detallesVentaService.remove(id);
   }
 }
