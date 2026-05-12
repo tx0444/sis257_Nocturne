@@ -1,151 +1,128 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OAuth2Client } from 'google-auth-library';
+import * as bcrypt from 'bcrypt';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { Rol } from '../roles/entities/rol.entity';
-import { UsuariosService } from '../usuarios/usuarios.service';
-import { AuthLoginDto } from './dto/auth-login.dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  private googleClient: OAuth2Client;
-
   constructor(
-    private readonly usuariosService: UsuariosService,
-    private readonly jwtService: JwtService,
-    @InjectRepository(Rol)
-    private readonly rolRepository: Repository<Rol>,
     @InjectRepository(Usuario)
-    private readonly usuarioRepository: Repository<Usuario>,
-  ) {
-    this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-  }
+    private usuarioRepository: Repository<Usuario>,
+    private jwtService: JwtService,
+  ) {}
 
-  // Login tradicional compatible con demo_nest_jwt
-  async login(authLoginDto: AuthLoginDto): Promise<any> {
-    const { usuario, clave } = authLoginDto;
-    
-    // Validar usuario (usuario es mapeado a email en la BD de Nocturne)
-    const usuarioOk = await this.usuariosService.validate(usuario, clave);
-
-    const payload: JwtPayload = { sub: usuarioOk.id };
-    const access_token = await this.getAccessToken(payload);
-
-    return {
-      id: usuarioOk.id,
-      nombre: usuarioOk.nombre,
-      email: usuarioOk.email,
-      rol: usuarioOk.rol,
-      fotoUrl: usuarioOk.fotoUrl,
-      avatar: usuarioOk.avatar,
-      google_provider: usuarioOk.googleProvider,
-      access_token,
-    };
-  }
-
-  // Generar access token
-  async getAccessToken(payload: JwtPayload): Promise<string> {
-    const secretKey = process.env.JWT_TOKEN || process.env.JWT_SECRET || 'default_secret';
-    return await this.jwtService.signAsync(payload, {
-      secret: secretKey,
-      expiresIn: '1d',
+  async validateUser(emailOrNick: string, password: string): Promise<Usuario> {
+    // Try to find by email or nickname
+    const usuario = await this.usuarioRepository.findOne({
+      where: [
+        { email: emailOrNick },
+        { nickname: emailOrNick },
+      ],
+      relations: ['rol'],
     });
-  }
 
-  // Verificar payload para JwtStrategy
-  async verifyPayload(payload: JwtPayload): Promise<Usuario> {
-    let usuario: Usuario;
-    try {
-      usuario = await this.usuariosService.findOne(payload.sub);
-    } catch {
-      throw new UnauthorizedException(`Usuario inválido: ${payload.sub}`);
+    if (!usuario || !usuario.activo) {
+      throw new UnauthorizedException('Credenciales inválidas');
     }
+
+    const isPasswordValid = await bcrypt.compare(password, usuario.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
     return usuario;
   }
 
-  // Login de Google
-  async loginWithGoogle(token: string) {
-    let payload;
-    try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } catch (error) {
-      throw new UnauthorizedException('Token de Google inválido');
-    }
+  async login(loginDto: LoginDto) {
+    const usuario = await this.validateUser(loginDto.emailOrNick, loginDto.password);
 
-    if (!payload) {
-      throw new UnauthorizedException('No se pudo verificar el token de Google');
-    }
+    const payload = {
+      sub: usuario.id,
+      email: usuario.email,
+      rol: usuario.rol?.nombre || 'usuario',
+    };
 
-    const { email, name, picture, sub } = payload;
-
-    if (!email) {
-      throw new UnauthorizedException('El token de Google no contiene un correo electrónico');
-    }
-
-    let usuario = await this.usuariosService.findByEmail(email);
-
-    if (!usuario) {
-      let defaultRol = await this.rolRepository.findOne({ where: { nombre: 'Cliente' } });
-      if (!defaultRol) {
-        defaultRol = await this.rolRepository.findOne({ where: {} });
-      }
-      if (!defaultRol) {
-        defaultRol = this.rolRepository.create({
-          nombre: 'Cliente',
-          descripcion: 'Rol de cliente por defecto',
-          permisos: ['ver'],
-          activo: true,
-        });
-        defaultRol = await this.rolRepository.save(defaultRol);
-      }
-
-      usuario = this.usuarioRepository.create({
-        nombre: name || 'Google User',
-        email,
-        password: '', // Sin contraseña local
-        googleProvider: true,
-        googleId: sub,
-        avatar: picture || '',
-        fotoUrl: picture || '',
-        rolId: defaultRol.id,
-        activo: true,
-      });
-      usuario = await this.usuarioRepository.save(usuario);
-    } else {
-      usuario.googleProvider = true;
-      usuario.googleId = sub;
-      if (picture) {
-        usuario.avatar = picture;
-        usuario.fotoUrl = picture;
-      }
-      usuario = await this.usuarioRepository.save(usuario);
-    }
-
-    await this.usuariosService.updateLastLogin(usuario.id);
-
-    const usuarioConRelaciones = await this.usuariosService.findOne(usuario.id);
-
-    const jwtPayload: JwtPayload = { sub: usuarioConRelaciones.id };
-    const accessToken = await this.getAccessToken(jwtPayload);
+    // Update last login
+    usuario.ultimoLogin = new Date();
+    await this.usuarioRepository.save(usuario);
 
     return {
-      access_token: accessToken,
+      access_token: this.jwtService.sign(payload),
       user: {
-        id: usuarioConRelaciones.id,
-        nombre: usuarioConRelaciones.nombre,
-        email: usuarioConRelaciones.email,
-        google_provider: usuarioConRelaciones.googleProvider,
-        google_id: usuarioConRelaciones.googleId,
-        avatar: usuarioConRelaciones.avatar,
-        rol: usuarioConRelaciones.rol,
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol?.nombre || 'usuario',
       },
     };
+  }
+
+  async register(registerDto: RegisterDto) {
+    const existingUser = await this.usuarioRepository.findOne({
+      where: { email: registerDto.email },
+    });
+
+    if (existingUser) {
+      throw new UnauthorizedException('El email ya está registrado');
+    }
+
+    // Check nickname uniqueness if provided
+    if (registerDto.nickname) {
+      const existingNick = await this.usuarioRepository.findOne({
+        where: { nickname: registerDto.nickname },
+      });
+      if (existingNick) {
+        throw new UnauthorizedException('El nickname ya está en uso');
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    const usuarioData: Partial<Usuario> = {
+      nombre: registerDto.nombre,
+      email: registerDto.email,
+      password: hashedPassword,
+      rolId: registerDto.rolId || 2,
+    };
+
+    if (registerDto.nickname) {
+      usuarioData.nickname = registerDto.nickname;
+    }
+    if (registerDto.telefono) {
+      usuarioData.telefono = registerDto.telefono;
+    }
+    if (registerDto.direccion) {
+      usuarioData.direccion = registerDto.direccion;
+    }
+
+    const savedUser = await this.usuarioRepository.save(this.usuarioRepository.create(usuarioData));
+
+    const payload = {
+      sub: savedUser.id,
+      email: savedUser.email,
+      rol: 'usuario',
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: savedUser.id,
+        nombre: savedUser.nombre,
+        email: savedUser.email,
+        rol: 'usuario',
+      },
+    };
+  }
+
+  async getProfile(userId: number) {
+    return this.usuarioRepository.findOne({
+      where: { id: userId },
+      relations: ['rol'],
+      select: ['id', 'nombre', 'nickname', 'email', 'telefono', 'direccion', 'fotoUrl', 'ultimoLogin', 'activo', 'createdAt'],
+    });
   }
 }

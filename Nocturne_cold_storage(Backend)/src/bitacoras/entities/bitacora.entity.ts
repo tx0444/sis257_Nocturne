@@ -23,7 +23,7 @@ export class Bitacora {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'simple-enum', enum: AccionBitacora })
+  @Column({ type: 'enum', enum: AccionBitacora })
   accion: AccionBitacora;
 
   @Column({ name: 'nombre_tabla', length: 100 })

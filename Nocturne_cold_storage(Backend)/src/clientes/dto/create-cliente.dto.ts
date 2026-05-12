@@ -31,3 +31,5 @@ export class UpdateClienteDto extends PartialType(CreateClienteDto) {
   @IsBoolean()
   activo?: boolean;
 }
+
+// Import parcial

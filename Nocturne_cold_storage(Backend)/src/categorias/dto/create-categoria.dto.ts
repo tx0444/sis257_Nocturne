@@ -18,3 +18,4 @@ export class UpdateCategoriaDto extends PartialType(CreateCategoriaDto) {
   @IsOptional()
   activo?: boolean;
 }
+

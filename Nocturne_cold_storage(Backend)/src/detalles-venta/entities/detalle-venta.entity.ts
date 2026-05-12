@@ -9,6 +9,11 @@ import { Venta } from '../../ventas/entities/venta.entity';
 import { Producto } from '../../productos/entities/producto.entity';
 import { Inventario } from '../../inventarios/entities/inventario.entity';
 
+export enum TemperaturaBebida {
+  NATURAL = 'natural',
+  FRIA = 'fria',
+}
+
 @Entity('detalles_venta')
 export class DetalleVenta {
   @PrimaryGeneratedColumn()
@@ -28,6 +33,9 @@ export class DetalleVenta {
 
   @Column({ name: 'numero_lote', length: 50, nullable: true })
   numeroLote: string;
+
+  @Column({ type: 'enum', enum: TemperaturaBebida, default: TemperaturaBebida.NATURAL })
+  temperaturaSeleccionada: TemperaturaBebida;
 
   @Column({ length: 500, nullable: true })
   observaciones: string;

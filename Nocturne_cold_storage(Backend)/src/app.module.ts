@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -18,7 +18,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { RolesModule } from './roles/roles.module';
 import { BitacorasModule } from './bitacoras/bitacoras.module';
 import { MovimientosInventarioModule } from './movimientos-inventario/movimientos-inventario.module';
-import { AuthModule } from './auth/auth.module';
+import { PromocionesModule } from './promociones/promociones.module';
 
 // Entidades
 import { Categoria } from './categorias/entities/categorias.entity';
@@ -32,34 +32,72 @@ import { Cliente } from './clientes/entities/cliente.entity';
 import { Rol } from './roles/entities/rol.entity';
 import { Bitacora } from './bitacoras/entities/bitacora.entity';
 import { MovimientoInventario } from './movimientos-inventario/entities/movimiento-inventario.entity';
+import { Boveda } from './bovedas/entities/boveda.entity';
+import { Tasacion } from './tasaciones/entities/tasacion.entity';
+import { EnvioSeguro } from './envios-seguros/entities/envio-seguro.entity';
+import { AlertaSeguridad } from './alertas-seguridad/entities/alertas-seguridad.entity';
+import { Promocion } from './promociones/entities/promocion.entity';
+import { BovedasModule } from './bovedas/bovedas.module';
+import { TasacionesModule } from './tasaciones/tasaciones.module';
+import { EnviosSegurosModule } from './envios-seguros/envios-seguros.module';
+import { AlertasSeguridadModule } from './alertas-seguridad/alertas-seguridad.module';
+import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
+import { MetodoPago } from './metodos-pago/entities/metodo-pago.entity';
+import { Factura } from './facturas/entities/factura.entity';
+import { DetalleFactura } from './facturas/entities/detalle-factura.entity';
+import { FacturasModule } from './facturas/facturas.module';
+
+// Nuevos módulos de funcionalidades
+import { AuthModule } from './auth/auth.module';
+import { CarritoModule } from './carrito/carrito.module';
+import { DireccionesModule } from './direcciones/direcciones.module';
+import { CarritoItem } from './carrito/entities/carrito-item.entity';
+import { Direccion } from './direcciones/entities/direccion.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      username: process.env.DB_USERNAME || 'usr_nocturne',
-      password: process.env.DB_PASSWORD || '123456',
-      database: process.env.DB_NAME || 'nocturne_db',
-      entities: [
-        Categoria,
-        Producto,
-        Proveedor,
-        Inventario,
-        Venta,
-        DetalleVenta,
-        Usuario,
-        Cliente,
-        Rol,
-        Bitacora,
-        MovimientoInventario,
-      ],
-      synchronize: true, // ⚠️ Solo para desarrollo
-      logging: false,
+    ConfigModule.forRoot({
+      envFilePath: '.env.Nocturn',
+      isGlobal: true,
     }),
-    // Módulos del sistema
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST', 'localhost'),
+        port: configService.get<number>('DB_PORT', 5432),
+        username: configService.get<string>('DB_USERNAME', 'usr_nocturnetx'),
+        password: configService.get<string>('DB_PASSWORD', '123456'),
+        database: configService.get<string>('DB_NAME', 'sis257_nocturne'),
+        ssl: false,
+        entities: [
+          Categoria,
+          Producto,
+          Proveedor,
+          Inventario,
+          Venta,
+          DetalleVenta,
+          Usuario,
+          Cliente,
+          Rol,
+          Bitacora,
+          MovimientoInventario,
+          Boveda,
+          Tasacion,
+          EnvioSeguro,
+          AlertaSeguridad,
+          Promocion,
+          MetodoPago,
+          Factura,
+          DetalleFactura,
+          CarritoItem,
+          Direccion,
+        ],
+        synchronize: true,
+        logging: false,
+      }),
+      inject: [ConfigService],
+    }),
     CategoriasModule,
     ProductosModule,
     ProveedoresModule,
@@ -71,7 +109,16 @@ import { MovimientoInventario } from './movimientos-inventario/entities/movimien
     RolesModule,
     BitacorasModule,
     MovimientosInventarioModule,
+    BovedasModule,
+    TasacionesModule,
+    EnviosSegurosModule,
+    AlertasSeguridadModule,
+    MetodosPagoModule,
+    FacturasModule,
+    PromocionesModule,
     AuthModule,
+    CarritoModule,
+    DireccionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

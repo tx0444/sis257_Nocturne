@@ -1,27 +1,32 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AuthLoginDto } from './dto/auth-login.dto';
-import { Public } from './decorators/auth-public.decorator';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() authLoginDto: AuthLoginDto) {
-    return this.authService.login(authLoginDto);
+  @Post('register')
+  @ApiOperation({ summary: 'Registrar nuevo usuario' })
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
-  @Public()
-  @Post('google')
-  @HttpCode(HttpStatus.OK)
-  async loginWithGoogle(@Body() body: { token?: string; credential?: string }) {
-    const token = body.token || body.credential;
-    if (!token) {
-      throw new BadRequestException('Token o credential es requerido');
-    }
-    return this.authService.loginWithGoogle(token);
+  @Post('login')
+  @ApiOperation({ summary: 'Iniciar sesión' })
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  getProfile(@Request() req) {
+    return this.authService.getProfile(req.user.userId);
   }
 }

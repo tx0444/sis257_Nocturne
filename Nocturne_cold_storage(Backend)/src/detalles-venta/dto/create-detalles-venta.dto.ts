@@ -31,3 +31,4 @@ export class CreateDetallesVentaDto {
 }
 
 export class UpdateDetallesVentaDto extends PartialType(CreateDetallesVentaDto) {}
+

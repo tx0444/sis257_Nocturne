@@ -11,19 +11,16 @@ async function bootstrap() {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.enableCors();
 
-  // Configuración de Swagger idéntica a demo_nest_jwt
   const config = new DocumentBuilder()
-    .setTitle('Nocturne: Cold Storage API')
-    .setDescription('API Rest para gestión de inventario y ventas de Nocturne')
+    .setTitle('Nocturne Cold Storage - Licorería')
+    .setDescription('API REST para gestión de licorería con facturación y métodos de pago')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' })
+    .addTag('productos, categorías, ventas, facturas, métodos de pago, clientes, inventario')
     .build();
-    
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`App corriendo en ${await app.getUrl()}`);
-  console.log(`Swagger UI disponible en: http://localhost:3000/api`);
+  console.log(`App corriendo en ${await app.getUrl()}/api`);
 }
 bootstrap();

@@ -1,26 +1,77 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Producto } from './entities/producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 
 @Injectable()
 export class ProductosService {
-  create(createProductoDto: CreateProductoDto) {
-    return 'This action adds a new producto';
+  constructor(
+    @InjectRepository(Producto)
+    private readonly productoRepository: Repository<Producto>,
+  ) {}
+
+  async create(createProductoDto: CreateProductoDto): Promise<Producto> {
+    const producto = this.productoRepository.create(createProductoDto);
+    return this.productoRepository.save(producto);
   }
 
-  findAll() {
-    return `This action returns all productos`;
+  async findAll(): Promise<Producto[]> {
+    return this.productoRepository.find({
+      relations: ['categoria', 'proveedor'],
+      order: { nombre: 'ASC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} producto`;
+  async findOne(id: number): Promise<Producto> {
+    const producto = await this.productoRepository.findOne({
+      where: { id },
+      relations: ['categoria', 'proveedor', 'inventarios'],
+    });
+    if (!producto) {
+      throw new NotFoundException(`Producto con ID ${id} no encontrado`);
+    }
+    return producto;
   }
 
-  update(id: number, updateProductoDto: UpdateProductoDto) {
-    return `This action updates a #${id} producto`;
+  async findByCodigoBarras(codigo: string): Promise<Producto | null> {
+    return this.productoRepository.findOne({ where: { codigoBarras: codigo } });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} producto`;
+  async findByCategoria(categoriaId: number): Promise<Producto[]> {
+    return this.productoRepository.find({
+      where: { categoriaId },
+      relations: ['categoria', 'proveedor'],
+      order: { nombre: 'ASC' },
+    });
+  }
+
+  async update(id: number, updateProductoDto: UpdateProductoDto): Promise<Producto> {
+    const producto = await this.findOne(id);
+    Object.assign(producto, updateProductoDto);
+    return this.productoRepository.save(producto);
+  }
+
+  async remove(id: number): Promise<void> {
+    const producto = await this.findOne(id);
+    await this.productoRepository.remove(producto);
+  }
+
+  async buscar(termino: string): Promise<Producto[]> {
+    return this.productoRepository
+      .createQueryBuilder('producto')
+      .leftJoinAndSelect('producto.categoria', 'categoria')
+      .where('producto.nombre LIKE :termino', { termino: `%${termino}%` })
+      .orWhere('producto.codigoBarras LIKE :termino', { termino: `%${termino}%` })
+      .getMany();
+  }
+
+  async getActivos(): Promise<Producto[]> {
+    return this.productoRepository.find({
+      where: { activo: true },
+      relations: ['categoria'],
+      order: { nombre: 'ASC' },
+    });
   }
 }
