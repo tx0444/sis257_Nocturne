@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SIS257 — Nocturne: Licorera Digital Suite</title>
+<style>
+  @page { size: A4-portrait; margin: 15mm 14mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, Arial, sans-serif; color: #1a1a2e; background: #fff; font-size: 10pt; }
+  .page { page-break-after: always; min-height: 297mm; padding: 12mm 0; }
+  .page:last-child { page-break-after: auto; }
+  .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260mm; text-align: center; background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #2d1b4e 100%); color: #fff; padding: 20mm; }
+  .cover .logo { font-size: 72pt; margin-bottom: 8mm; }
+  .cover h1 { font-size: 36pt; font-weight: 900; letter-spacing: 4pt; text-transform: uppercase; margin: 0 0 4mm; }
+  .cover .subtitle { font-size: 16pt; color: #c9a84c; margin: 0 0 14mm; font-weight: 300; letter-spacing: 2pt; }
+  .cover .divider { width: 60mm; height: 2pt; background: #c9a84c; margin: 6mm auto; }
+  .cover .meta { font-size: 10pt; color: #aaaacc; line-height: 2.2; }
+  .cover .meta strong { color: #c9a84c; }
+
+  h2 { font-size: 18pt; margin: 0 0 5mm; color: #1a0a2e; border-bottom: 2pt solid #c9a84c; padding-bottom: 3mm; }
+  h3 { font-size: 12pt; margin: 5mm 0 2mm; color: #2d1b4e; }
+
+  .info-box { background: #f7f5ff; border-left: 3pt solid #8a2be2; padding: 4mm 5mm; margin: 4mm 0; font-size: 9.5pt; }
+
+  table { width: 100%; border-collapse: collapse; margin: 4mm 0; font-size: 9pt; }
+  th { background: #1a0a2e; color: #fff; padding: 3mm 4mm; text-align: left; }
+  td { padding: 2.5mm 4mm; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f7ff; }
+  .badge { display: inline-block; padding: 1pt 4pt; border-radius: 3pt; font-size: 8pt; font-weight: 700; }
+  .badge-good { background: #d4edda; color: #155724; }
+  .badge-warn { background: #fff3cd; color: #856404; }
+  .badge-admin { background: #c9a84c; color: #1a0a2e; }
+
+  .section { margin: 6mm 0; }
+  .two-col { display: table; width: 100%; }
+  .two-col > div { display: table-cell; width: 48%; vertical-align: top; }
+  .two-col > div:first-child { padding-right: 6mm; }
+  .two-col > div:last-child { padding-left: 6mm; }
+
+  ul { margin: 2mm 0; padding-left: 6mm; }
+  li { margin-bottom: 1.5mm; }
+
+  .er-diagram { font-family: 'Courier New', monospace; font-size: 7.5pt; background: #1a1a2e; color: #fff; padding: 5mm; border-radius: 4pt; overflow-x: auto; white-space: pre; line-height: 1.6; }
+  .er-diagram .pk { color: #ffd700; }
+  .er-diagram .fk { color: #00bfff; }
+  .er-diagram .table { color: #c9a84c; }
+
+  .creds { background: #1a1a2e; color: #fff; padding: 5mm; border-radius: 4pt; }
+  .creds strong { color: #c9a84c; }
+  .creds code { background: #2d1b4e; padding: 1pt 4pt; border-radius: 2pt; font-family: 'Courier New', monospace; font-size: 9pt; }
+
+  .footer-page { position: fixed; bottom: 10mm; left: 15mm; right: 15mm; font-size: 8pt; color: #999; text-align: center; border-top: 0.5pt solid #eee; padding-top: 2mm; }
+  .pagenum { position: absolute; right: 0; top: -8mm; font-size: 8pt; color: #999; }
+
+  .warning { background: #fff3cd; border: 1pt solid #ffc107; padding: 4mm; border-radius: 3pt; font-size: 9pt; margin: 4mm 0; }
+  .warning strong { color: #856404; }
+
+  .toc { border: 2pt solid #1a0a2e; padding: 6mm; border-radius: 4pt; }
+  .toc-item { padding: 2mm 0; border-bottom: 0.5pt solid #eee; }
+  .toc-item:last-child { border-bottom: none; }
+  .toc-item span { float: right; color: #888; }
+  .toc-item a { color: inherit; text-decoration: none; }
+
+  .highlight { background: #f0e6ff; padding: 1pt 4pt; border-radius: 2pt; font-size: 9pt; }
+
+  code { background: #f0f0ff; padding: 1pt 3pt; border-radius: 2pt; font-family: 'Courier New', monospace; font-size: 8.5pt; }
+  pre { background: #1a1a2e; color: #fff; padding: 4mm; border-radius: 4pt; font-family: 'Courier New', monospace; font-size: 8pt; overflow-x: auto; }
+  pre .c { color: #888; }
+  pre .k { color: #c9a84c; }
+
+</style>
+</head>
+<body>
+
+<!-- ===== PÁGINA 1: CARÁTULA ===== -->
+<div class="page">
+  <div class="cover">
+    <div class="logo">🍷</div>
+    <h1>NOCTURNE</h1>
+    <div class="subtitle">Licorería Digital Suite</div>
+    <div class="divider"></div>
+    <div class="meta">
+      <strong>SIS257</strong> — Desarrollo de Aplicaciones Internet II<br>
+      Universidad / Carrera de Informática<br>
+      <br>
+      <strong>Grupo:</strong> Nocturne<br>
+      <strong>Integrantes:</strong> [Nombre 1] · [Nombre 2]<br>
+      <br>
+      <strong>Base de datos:</strong> sis257_nocturne<br>
+      <strong>Backend:</strong> backend_nocturne<br>
+      <strong>Frontend:</strong> frontend_nocturne<br>
+      <br>
+      La Paz, Bolivia · 2026
+    </div>
+  </div>
+  <div class="footer-page">Nocturne: Donde cada botella cuenta. · SIS257</div>
+</div>
+
+<!-- ===== PÁGINA 2: DESCRIPCIÓN DEL NEGOCIO ===== -->
+<div class="page" id="negocio">
+  <h2>1. Descripción del Negocio</h2>
+
+  <div class="section">
+    <h3>Nombre: <span class="highlight">NOCTURNE</span></h3>
+    <p>Licorería premium orientada a bebidas de altura, destilados de colección y experiencias exclusivas. El nombre evoca <strong>exclusividad nocturna</strong> y <strong>custodia en bóveda</strong> (cold storage / virtual cellar).</p>
+  </div>
+
+  <div class="section">
+    <h3>Modelo de Negocio</h3>
+    <table>
+      <thead>
+        <tr><th>Fuente de ingresos</th><th>Descripción</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Venta retail</strong></td><td>Margen en botella retail vs. precio de compra</td></tr>
+        <tr><td><strong>Membresía / Eventos</strong></td><td>Catas privadas y promociones "Invite Only"</td></tr>
+        <tr><td><strong>Suministro B2B</strong></td><td>Bebidas para bares y hoteles con facturación formal</td></tr>
+        <tr><td><strong>Cadena de frío</strong></td><td>Flag <code>requiere_frio</code> para productos sensibles</td></tr>
+        <tr><td><strong>Bóveda virtual</strong></td><td>Gestión de botellas en custodia (roadmap)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Diferenciadores</h3>
+    <ul>
+      <li><strong>Trazabilidad por lote</strong> — formato <code>NOC-XXXX-YY</code></li>
+      <li><strong>Flag <code>requiere_frio</code></strong> — para productos que necesitan cadena de frío</li>
+      <li><strong>Inventario por lotes</strong> — con fecha de vencimiento y ubicación</li>
+      <li><strong>Catálogo digital</strong> + panel admin + reportes en tiempo real</li>
+      <li><strong>Marca propia</strong> — Nocturne Dark (cerveza artesanal)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h3>Módulos del Sistema</h3>
+    <table>
+      <thead>
+        <tr><th>Módulo</th><th>Función</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Catálogo web (Vue.js)</td><td>Productos y categorías públicos</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Inventario por lote</td><td>Stock, vencimiento, observaciones de bóveda</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Ventas y facturación</td><td>Registro de ventas, detalle, métodos de pago</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Usuarios y roles</td><td>Admin, vendedor, cliente con JWT</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Promociones</td><td>Descuentos por categoría y período</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Módulo de reportes</td><td>Dashboard del día, calendario, exportación CSV/PDF</td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Swagger API</td><td>Documentación auto-generada en <code>/api/docs</code></td><td><span class="badge badge-good">COMPLETO</span></td></tr>
+        <tr><td>Bóveda virtual</td><td>Custodia digital de botellas premium</td><td><span class="badge badge-warn">ROADMAP</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 2</div>
+</div>
+
+<!-- ===== PÁGINA 3: PROBLEMÁTICA ===== -->
+<div class="page" id="problematica">
+  <h2>2. Problemática</h2>
+
+  <div class="section">
+    <h3>Problemas del mercado actual</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Problema</th><th>Impacto</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Quiebres de stock</strong></td><td>Inventario manual genera faltantes y sobre-stock, pérdida de ventas</td></tr>
+        <tr><td>2</td><td><strong>Pérdida por vencimiento</strong></td><td>Productos sensibles (vinos, champagne, singanis) caducan sin control</td></tr>
+        <tr><td>3</td><td><strong>Falta de trazabilidad</strong></td><td>Clientes premium demandan información de origen y lote</td></tr>
+        <tr><td>4</td><td><strong>Canal digital ausente</strong></td><td>Competidores solo operan en tienda física; pérdida de mercado online</td></tr>
+        <tr><td>5</td><td><strong>Sin reportes financieros</strong></td><td>Dificultad para conocer el rendimiento real por período y método</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Solución propuesta con Nocturne</h3>
+    <table>
+      <thead>
+        <tr><th>Problema</th><th>Solución en Nocturne</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Quiebres de</td><td>Inventario por lote con sincronización automática al venta</td></tr>
+        <tr><td>Vencimiento</td><td>Fechas de expiración y alertas en BD; flag <code>requiere_frio</code></td></tr>
+        <tr><td>Trazabilidad</td><td>Lote + origen + proveedor vinculados al producto</td></tr>
+        <tr><td>Canal digital</td><td>Catálogo Vue.js público + dashboard admin con JWT</td></tr>
+        <tr><td>Reportes</td><td>Módulo de reportes: dashboard del día, calendario, <code>/reportes/dia</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Flujo de Valor</h3>
+    <pre>
+Cliente web (Vue.js) ──axios──► API NestJS (JWT) ──► PostgreSQL <span class="c">// sis257_nocturne</span>
+                                    │
+                            Puerto <span class="k">3000</span> /api/v1
+                              │
+                        Swagger: <span class="k">/api/docs</span>
+                        Personal tienda (admin/vendedor)
+                        </pre>
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 3</div>
+</div>
+
+<!-- ===== PÁGINA 4: DIAGRAMA ER ===== -->
+<div class="page" id="er">
+  <h2>3. Diagrama Entidad-Relación (DBeaver)</h2>
+
+  <div class="info-box">
+    <strong>Cómo generar este diagrama en DBeaver:</strong><br>
+    1. Abrir DBeaver → Nueva conexión → PostgreSQL (localhost:5432 / sis257_nocturne)<br>
+    2. Ir a la pestaña "Diagramas" → Nuevo diagrama ER<br>
+    3. Seleccionar todas las tablas del esquema<br>
+    4. Exportar como imagen PNG para la presentación
+  </div>
+
+  <div class="er-diagram">
+<span class="c">// ===== ESQUEMA COMPLETO: sis257_nocturne =====</span>
+
+<span class="table">┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐</span>
+<span class="table">│    CATEGORIAS    │        │    PRODUCTOS     │        │   INVENTARIOS    │</span>
+<span class="table">├──────────────────┤        ├──────────────────┤        ├──────────────────┤</span>
+<span class="pk">│ id (PK)          │◄──────│ categoria_id(FK)│        │ id (PK)          │</span>
+<span class="table">│ nombre           │        │ id (PK)          │─┐    │ producto_id (FK)│</span>
+<span class="fk">│ activo            │        │ nombre           │ │    │ cantidad_stock  │</span>
+<span class="table">└──────────────────┘        │ precio_compra    │ │    │ lote            │</span>
+                              │ precio_venta     │ │    │ fecha_vencimiento│</span>
+                              │ requiere_frio    │ │    │ observaciones    │</span>
+                              │ activo           │◄─┘    └──────────────────┘</span>
+                              └──────────────────┘
+                                     │ 1:N
+                                     ▼
+                              ┌──────────────────┐
+<span class="table">┌──────────────┐        │  DETALLES_VENTA  │       ┌──────────────────┐</span>
+<span class="table">│   USUARIOS   │──────────├──────────────────┤◄─────│     VENTAS       │</span>
+<span class="table">├──────────────┤        │ id (PK)          │       ├──────────────────┤</span>
+<span class="pk">│ id (PK)      │        │ venta_id (FK)    │       │ id (PK)          │</span>
+<span class="table">│ nombre       │        │ producto_id(FK) │       │ numero_factura   │</span>
+<span class="table">│ email        │        │ cantidad         │       │ total            │</span>
+<span class="table">│ password_hash│        │ subtotal         │       │ metodo_pago      │</span>
+<span class="fk">│ rol_id (FK)  │        │ precio_unitario  │       │ estado           │</span>
+<span class="table">└──────────────┘        └──────────────────┘       │ fecha_venta      │</span>
+        │                                       └──────────────────┘
+        │
+        ▼  N:1
+┌──────────────┐                            ┌──────────────────┐
+<span class="table">│    ROLES     │                            │     CLIENTES      │</span>
+<span class="table">├──────────────┤                            ├──────────────────┤</span>
+<span class="pk">│ id (PK)      │                            │ <span class="pk">id (PK)</span>          │</span>
+<span class="table">│ nombre       │                            │ nombre           │</span>
+<span class="table">│ permisos     │                            │ telefono         │</span>
+<span class="table">└──────────────┘                            │ email            │</span>
+                                               │ direccion        │
+                                               └──────────────────┘
+
+<span class="c">// ===== MÓDULOS ADICIONALES =====</span>
+<span class="table">┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐</span>
+<span class="table">│    PROVEEDORES    │   │   PROMOCIONES     │   │     BOVEDAS      │</span>
+<span class="table">├──────────────────┤   ├──────────────────┤   ├──────────────────┤</span>
+<span class="pk">│ id (PK)           │   │ id (PK)          │   │ id (PK)          │</span>
+<span class="table">│ nombre            │   │ nombre           │   │ nombre           │</span>
+<span class="table">│ nit               │   │ descuento_pct    │   │ ubicacion        │</span>
+<span class="table">│ telefono          │   │ fecha_inicio     │   │ capacidad        │</span>
+<span class="table">│ email             │   │ fecha_fin        │   │ condicion_frio   │</span>
+<span class="table">│ direccion         │   │ categoria_id    │   └──────────────────┘</span>
+<span class="table">└──────────────────┘   └──────────────────┘</span>
+
+<span class="c">// ===== MÓDULOS DE LOGÍSTICA Y SEGURIDAD =====</span>
+<span class="table">┌──────────────────┐   ┌──────────────────────────┐   ┌──────────────────┐</span>
+<span class="table">│    DIRECCIONES    │   │  MOVIMIENTOS_INVENTARIO │   │   BITACORAS      │</span>
+<span class="table">├──────────────────┤   ├──────────────────────────┤   ├──────────────────┤</span>
+<span class="pk">│ id (PK)          │   │ id (PK)                │   │ id (PK)          │</span>
+<span class="table">│ cliente_id (FK)  │   │ producto_id (FK)       │   │ usuario_id (FK)  │</span>
+<span class="table">│ direccion        │   │ tipo_movimiento        │   │ accion           │</span>
+<span class="table">│ referencia       │   │ cantidad               │   │ fecha            │</span>
+<span class="table">│ telefono         │   │ venta_id (FK)          │   │ detalles         │</span>
+<span class="table">└──────────────────┘   └──────────────────────────┘   └──────────────────┘</span>
+</div>
+
+  <div class="info-box">
+    <strong>Relaciones principales:</strong><br>
+    USUARIOS → ROLES (N:1) · PRODUCTOS → CATEGORIAS (N:1)<br>
+    VENTA → DETALLES_VENTA (1:N) · VENTA → USUARIOS (N:1)<br>
+    VENTA → CLIENTES (N:1) · PRODUCTOS → INVENTARIOS (1:N)
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 4</div>
+</div>
+
+<!-- ===== PÁGINA 5: ENLACES Y ACCESO ===== -->
+<div class="page" id="acceso">
+  <h2>4. Enlaces y Datos de Acceso</h2>
+
+  <div class="section">
+    <h3>Repositorios GitHub</h3>
+    <table>
+      <thead>
+        <tr><th>Componente</th><th>Enlace GitHub</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Backend</strong></td><td><code>https://github.com/[tu-user]/[repo-backend]</code></td></tr>
+        <tr><td><strong>Frontend</strong></td><td><code>https://github.com/[tu-user]/[repo-frontend]</code></td></tr>
+        <tr><td><strong>Repo unificado</strong></td><td><code>https://github.com/[tu-user]/sis257_nocturne</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>URLs de acceso local</h3>
+    <table>
+      <thead>
+        <tr><th>Servicio</th><th>URL local</th><th>Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Frontend (desarrollo)</td><td><code>http://localhost:5173</code></td><td>Vite dev server</td></tr>
+        <tr><td>API Backend</td><td><code>http://localhost:3000/api/v1</code></td><td>NestJS REST</td></tr>
+        <tr><td>Swagger / Docs</td><td><code>http://localhost:3000/api/docs</code></td><td>Documentación API interactiva</td></tr>
+        <tr><td>Panel Admin</td><td><code>http://localhost:5173/admin</code></td><td>Ruta protegida JWT</td></tr>
+        <tr><td>Login</td><td><code>http://localhost:5173/login</code></td><td>Autenticación</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Credenciales de acceso</h3>
+    <div class="creds">
+      <strong>USUARIO ADMINISTRADOR</strong><br><br>
+      <strong>Email:</strong> <code>admin@nocturne.bo</code><br>
+      <strong>Contraseña:</strong> <code>Nocturne2026!</code><br>
+      <strong>Nivel:</strong> Full — dashboard completo + CRUD total<br>
+      <br>
+      <strong>USUARIO VENDEDOR</strong><br><br>
+      <strong>Email:</strong> <code>vendedor@nocturne.bo</code><br>
+      <strong>Contraseña:</strong> <code>Vendedor123!</code><br>
+      <strong>Nivel:</strong> Panel de ventas (solo crear venta)
+    </div>
+    <div class="warning">
+      <strong>⚠️ IMPORTANTE:</strong> Cambiar las contraseñas antes de cualquier entrega pública al profesor o subir a repositorio público. Estas credenciales son de prueba local.
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Conexión PostgreSQL</h3>
+    <div class="creds">
+      <strong>Host:</strong> <code>localhost</code> · <strong>Puerto:</strong> <code>5432</code><br>
+      <strong>Base de datos:</strong> <code>sis257_nocturne</code><br>
+      <strong>Usuario:</strong> <code>usr_nocturnetx</code> · <strong>Contraseña:</strong> <code>123456</code>
+    </div>
+    <pre>
+<span class="c">-- Crear usuario y base de datos (psql / DBeaver / pgAdmin)</span>
+CREATE USER usr_nocturnetx WITH PASSWORD <span class="k">'123456'</span>;
+CREATE DATABASE sis257_nocturne OWNER usr_nocturnetx;
+GRANT ALL PRIVILEGES ON DATABASE sis257_nocturne TO usr_nocturnetx;
+</pre>
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 5</div>
+</div>
+
+<!-- ===== PÁGINA 6: CAPTURAS DE FUNCIONAMIENTO ===== -->
+<div class="page" id="capturas">
+  <h2>5. Capturas de Funcionamiento</h2>
+
+  <div class="section">
+    <h3>5.1 Endpoints principales del Backend (Swagger)</h3>
+    <table>
+      <thead>
+        <tr><th>Método</th><th>Endpoint</th><th>Descripción</th><th>Auth</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/categorias</code></td><td>Lista categorías</td><td>Público</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/productos</code></td><td>Catálogo productos</td><td>Público</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/productos/:id</code></td><td>Detalle producto</td><td>Público</td></tr>
+        <tr><td><span class="badge badge-warn">POST</span></td><td><code>/auth/login</code></td><td>Login JWT</td><td>Público</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/ventas</code></td><td>Registro ventas</td><td>JWT</td></tr>
+        <tr><td><span class="badge badge-warn">POST</span></td><td><code>/ventas</code></td><td>Crear venta</td><td>JWT</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/reportes/dashboard/hoy</code></td><td>Dashboard del día</td><td>JWT</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/reportes/calendario</code></td><td>Calendario mensual</td><td>JWT</td></tr>
+        <tr><td><span class="badge badge-good">GET</span></td><td><code>/reportes/dia</code></td><td>Reporte por día</td><td>JWT</td></tr>
+        <tr><td><span class="badge badge-warn">POST</span></td><td><code>/carrito/checkout</code></td><td>Finalizar compra</td><td>JWT</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>5.2 Flujo de Compra/Venta (funcionalidad principal — mayor puntaje)</h3>
+    <pre>
+<span class="c">// ===== FLUJO COMPLETO DE COMPRA =====</span>
+
+<span class="k">1.</span> Cliente abre <span class="k">http://localhost:5173</span>
+   └─► Catálogo Vue.js con axios → GET <span class="k">/api/v1/productos</span>
+
+<span class="k">2.</span> Navega categorías → Selecciona productos
+   └─► Agrega al carrito (carrito anónimo UUID en localStorage)
+
+<span class="k">3.</span> Checkout → Selecciona método de pago
+   ├─► EFECTIVO
+   ├─► TARJETA
+   ├─► QR
+   └─► TRANSFERENCIA
+
+<span class="k">4.</span> POST <span class="k">/api/v1/carrito/checkout</span>
+   ├─► Crea VENTA en BD (estado: <span class="k">COMPLETADA</span>)
+   ├─► Crea DETALLES_VENTA por cada item
+   ├─► Descuenta stock en INVENTARIOS (transaction)
+   └─► Crea MOVIMIENTO_INVENTARIO (tipo: VENTA)
+
+<span class="k">5.</span> Respuesta → Número de factura + confirmación
+   └─► Cliente recibe comprobante en pantalla
+
+<span class="k">6.</span> Admin ve la venta en dashboard
+   └─► polling 5s → GET <span class="k">/api/v1/reportes/dashboard/hoy</span>
+
+<span class="k">7.</span> Stock de productos actualizado en tiempo real
+   └─► Valida disponibilidad antes de cada checkout
+</pre>
+  </div>
+
+  <div class="section">
+    <h3>5.3 Capturas recomendadas (agregar como imágenes)</h3>
+    <table>
+      <thead>
+        <tr><th>Captura</th><th>Pantalla</th><th>URL</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Swagger: endpoints de autenticación</td><td><code>localhost:3000/api/docs</code></td></tr>
+        <tr><td>2</td><td>Catálogo público: grid de productos</td><td><code>localhost:5173</code></td></tr>
+        <tr><td>3</td><td>Detalle de producto con precio y stock</td><td><code>localhost:5173/productos/:id</code></td></tr>
+        <tr><td>4</td><td>Carrito: items + totales</td><td><code>localhost:5173/carrito</code></td></tr>
+        <tr><td>5</td><td>Checkout: métodos de pago</td><td><code>localhost:5173/checkout</code></td></tr>
+        <tr><td>6</td><td>Login admin</td><td><code>localhost:5173/login</code></td></tr>
+        <tr><td>7</td><td>Dashboard admin: métricas del día</td><td><code>localhost:5173/admin</code></td></tr>
+        <tr><td>8</td><td>Reportes: calendario de ventas</td><td><code>localhost:5173/admin/reportes</code></td></tr>
+        <tr><td>9</td><td>CRUD productos desde admin</td><td><code>localhost:5173/admin/productos</code></td></tr>
+        <tr><td>10</td><td>Venta manual desde caja física</td><td><code>localhost:5173/admin/ventas/nueva</code></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 8pt; color: #666; margin-top: 3mm;">
+      <em>Nota: Las capturas de pantalla se mostrarán durante la demostración y no se publican en esta presentación.</em>
+    </p>
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 6</div>
+</div>
+
+<!-- ===== PÁGINA 7: STACK + PRODUCCIÓN ===== -->
+<div class="page" id="stack">
+  <h2>6. Stack Tecnológico y Producción</h2>
+
+  <div class="section">
+    <h3>Stack</h3>
+    <table>
+      <thead>
+        <tr><th>Capa</th><th>Tecnología</th><th>Versión</th><th>Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Base de datos</td><td>PostgreSQL</td><td>17</td><td>Host: localhost · BD: sis257_nocturne</td></tr>
+        <tr><td>Backend</td><td>NestJS + TypeORM</td><td>11</td><td>API REST en /api/v1 · JWT auth</td></tr>
+        <tr><td>Frontend</td><td>Vue 3 + axios + Bootstrap</td><td>3.5</td><td>Requisito del curso ✅</td></tr>
+        <tr><td>API Docs</td><td>Swagger (@nestjs/swagger)</td><td>—</td><td>/api/docs · Bearer JWT</td></tr>
+        <tr><td>Seguridad</td><td>Helmet + rate-limit + cookie-parser</td><td>—</td><td>HTTP headers, CSRF, CORS</td></tr>
+        <tr><td>Reportes</td><td>Módulo reportes + query builder</td><td>—</td><td>Dashboard, calendario, exportación</td></tr>
+        <tr><td>Contenedores</td><td>Docker Compose</td><td>—</td><td>PostgreSQL + API (pendiente docker)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Seguridad implementada</h3>
+    <table>
+      <thead>
+        <tr><th>Característica</th><th>Implementación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Autenticación</td><td>JWT con token en Bearer header</td></tr>
+        <tr><td>Contraseñas</td><td>bcrypt con salt factor 10</td></tr>
+        <tr><td>HTTP Security</td><td>Helmet.js (CSP, HSTS, X-Frame)</td></tr>
+        <tr><td>Rate Limiting</td><td>express-rate-limit (100 req/min)</td></tr>
+        <tr><td>Cookie Parser</td><td>cookie-parser para httpOnly cookies</td></tr>
+        <tr><td>Validación</td><td>ValidationPipe global (whitelist + transform)</td></tr>
+        <tr><td>CORS</td><td>Configurado con FRONTEND_URL allowed</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Preparación para entrega</h3>
+    <ul>
+      <li>✅ Stack completo: PostgreSQL + NestJS + Vue.js + Bootstrap ✅</li>
+      <li>✅ CRUD de 2 catálogos: <code>productos</code> + <code>categorias</code></li>
+      <li>✅ Login JWT con niveles de acceso (admin/vendedor)</li>
+      <li>✅ Compra/Venta funcional con descuento de stock transaccional</li>
+      <li>✅ Swagger en <code>/api/docs</code></li>
+      <li>✅ Módulo de reportes</li>
+      <li>✅ Presentación Markdown lista</li>
+      <li>⚠️ Exportar este HTML a PDF (<strong>imprimir desde navegador como PDF A4</strong>)</li>
+      <li>⚠️ Agregar capturas reales del sistema funcionando</li>
+      <li>⚠️ Llenar nombres de integrantes del grupo</li>
+      <li>⚠️ Subir a repositorio con nombre <code>sis257_nocturne</code></li>
+    </ul>
+  </div>
+
+  <div class="info-box" style="margin-top: 6mm;">
+    <strong>📌 Para generar el PDF:</strong> Abrir este archivo HTML en Chrome/Edge → <strong>Ctrl+P</strong> → Guardar como PDF → Formato <strong>A4</strong> → Nombre: <code>lab_sis257_nocturne.pdf</code> → Subir a Classroom.
+  </div>
+
+  <div class="footer-page">SIS257 — Nocturne · Página 7</div>
+</div>
+
+</body>
+</html>
