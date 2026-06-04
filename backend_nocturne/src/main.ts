@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { csrfMiddleware } from './common/middlewares/csrf.middleware';
 import { helmetConfig } from './common/utils/helmet-config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 type TrustProxyCapable = { set: (setting: string, value: unknown) => void };
 
@@ -59,6 +60,15 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('api');
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Nocturne API')
+    .setDescription('API REST para el sistema Nocturne')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = Number(process.env.PORT) || 3000;
   const host = process.env.HOST || '0.0.0.0';

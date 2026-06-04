@@ -71,6 +71,9 @@ export class Venta {
   @Column({ name: 'cliente_id', type: 'int', nullable: true })
   clienteId?: number | null;
 
+  @Column({ name: 'cliente_ci', type: 'varchar', length: 20, nullable: true })
+  clienteCi?: string | null;
+
   @Column({ type: 'text', nullable: true })
   notas?: string | null;
 

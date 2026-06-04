@@ -116,35 +116,56 @@
 
     <section v-else class="row g-4">
       <div class="col-lg-4">
-        <form class="card card-nocturne p-4" @submit.prevent="guardarVenta">
+        <form class="card card-nocturne p-4" @submit.prevent="procesarVenta">
           <h2 class="h5 font-serif text-white mb-3">{{ ventaForm.id ? 'Editar venta' : 'Nueva venta (POS)' }}</h2>
           <input v-model.trim="ventaForm.clienteNombre" class="form-control mb-3" placeholder="Cliente" />
+          <input v-model.trim="ventaForm.clienteCi" class="form-control mb-3" placeholder="CI Cliente (opcional)" maxlength="20" />
           <select v-model.number="ventaForm.empleadoId" class="form-select mb-3">
             <option :value="null">Sistema Web</option>
             <option v-for="empleado in empleados" :key="empleado.id" :value="empleado.id">{{ empleado.nombre }}</option>
           </select>
           
           <div v-if="!ventaForm.id" class="mb-3 p-2 border border-secondary rounded">
-            <label class="form-label small text-gold mb-1">Añadir Producto</label>
             <div class="d-flex gap-2 mb-2">
-              <select v-model="posSeleccion.productoId" class="form-select form-select-sm bg-dark text-white border-secondary">
-                <option value="">Seleccione producto</option>
-                <option v-for="p in productos" :key="p.id" :value="p.id" :disabled="!p.activo || p.stock < 1">
-                  {{ p.nombre }} (Stock: {{ p.stock }}) - Bs. {{ p.precio }}
+              <select v-model="posCategoriaId" class="form-select form-select-sm bg-dark text-white border-secondary" style="flex: 0 0 150px">
+                <option :value="null">Categoría</option>
+                <option v-for="cat in categorias" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+              </select>
+              <select v-model="posSeleccion.productoId" class="form-select form-select-sm bg-dark text-white border-secondary flex-grow-1">
+                <option value="">Producto</option>
+                <option v-for="p in productosPorCategoria" :key="p.id" :value="p.id" :disabled="!p.activo || p.stock < 1">
+                  {{ p.nombre }} - Bs. {{ p.precio }} (Stock: {{ p.stock }})
                 </option>
               </select>
-              <input v-model.number="posSeleccion.cantidad" type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 60px" />
-              <button class="btn btn-sm btn-outline-gold" type="button" @click="agregarProductoPOS">+</button>
+              <input v-model.number="posSeleccion.cantidad" type="number" min="1" class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 70px" />
+              <button class="btn btn-sm btn-outline-gold" type="button" @click="agregarUnProducto" title="Añadir">
+                <i class="bi bi-plus-lg"></i>
+              </button>
             </div>
-            
-            <ul class="list-group list-group-flush small" v-if="ventaForm.items.length > 0">
-              <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between px-1 py-1" v-for="(item, index) in ventaForm.items" :key="index">
-                <span>{{ getProductoNombre(item.productoId) }} (x{{ item.cantidad }})</span>
-                <button class="btn btn-sm btn-link text-danger p-0" type="button" @click="ventaForm.items.splice(index, 1)"><i class="bi bi-x"></i></button>
-              </li>
-            </ul>
+
+            <div v-if="ventaForm.items.length > 0" class="mt-2">
+              <div class="text-gold small mb-1">Productos añadidos:</div>
+              <div class="pos-items-list">
+                <div class="pos-item-row" v-for="(item, index) in ventaForm.items" :key="index">
+                  <span class="pos-item-nombre">{{ getProductoNombre(item.productoId) }}</span>
+                  <div class="pos-item-controls">
+                    <button class="btn btn-sm btn-link text-white p-0" type="button" @click="item.cantidad > 1 ? item.cantidad-- : null">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <span class="pos-item-cant">{{ item.cantidad }}</span>
+                    <button class="btn btn-sm btn-link text-white p-0" type="button" @click="item.cantidad++">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                    <span class="pos-item-sub">Bs. {{ fmt(getProductoPrecio(item.productoId) * item.cantidad) }}</span>
+                    <button class="btn btn-sm btn-link text-danger p-0" type="button" @click="ventaForm.items.splice(index, 1)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          
+
           <div class="d-flex justify-content-between align-items-center mb-3 px-2">
             <span class="small text-secondary">Total:</span>
             <span class="text-gold fw-bold h5 mb-0">Bs. {{ fmt(ventaForm.id ? ventaForm.total : totalPOS) }}</span>
@@ -158,25 +179,30 @@
           </select>
 
           <div v-if="ventaForm.metodoPago === 'efectivo' && !ventaForm.id" class="mb-3 px-2">
-            <label class="form-label small text-gold mb-1">Monto Recibido</label>
-            <input v-model.number="ventaForm.montoRecibido" type="number" min="0" step="0.01" class="form-control form-control-sm bg-dark text-white border-secondary mb-1" placeholder="Efectivo entregado por cliente" />
-            <div v-if="cambioPOS >= 0 && ventaForm.montoRecibido > 0" class="small text-success mt-1 fw-bold">
-              Cambio a devolver: Bs. {{ fmt(cambioPOS) }}
+            <div class="d-flex gap-2 mb-2">
+              <input v-model.number="ventaForm.montoRecibido" type="number" min="0" step="0.01" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Monto recibido" />
+              <button class="btn btn-sm btn-outline-gold" type="button" @click="calcularCambio">Calcular</button>
             </div>
-            <div v-else-if="cambioPOS < 0 && ventaForm.montoRecibido > 0" class="small text-danger mt-1">
-              Falta Bs. {{ fmt(Math.abs(cambioPOS)) }}
+            <div v-if="cambioPOS !== null" class="small fw-bold" :class="cambioPOS >= 0 ? 'text-success' : 'text-danger'">
+              {{ cambioPOS >= 0 ? 'Cambio a devolver: Bs. ' + fmt(cambioPOS) : 'Falta: Bs. ' + fmt(Math.abs(cambioPOS)) }}
             </div>
           </div>
 
           <textarea v-model.trim="ventaForm.notas" class="form-control mb-3" placeholder="Notas" />
-          <FormButtons :loading="loading" @clear="resetVenta" />
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-gold flex-grow-1" type="button" @click="resetVenta">LIMPIAR</button>
+            <button class="btn btn-gold flex-grow-1" type="button" @click="procesarVenta" :disabled="loading || (!ventaForm.id && ventaForm.items.length === 0)">
+              {{ loading ? 'Procesando...' : 'PROCESAR VENTA' }}
+            </button>
+          </div>
         </form>
       </div>
       <div class="col-lg-8">
-        <DataTable :headers="['Venta', 'Cliente', 'Metodo', 'Total', 'Estado', '']">
+        <DataTable :headers="['Venta', 'Cliente', 'CI', 'Metodo', 'Total', 'Estado', '']">
           <tr v-for="venta in ventas" :key="venta.id">
             <td>#{{ venta.id }}</td>
             <td>{{ venta.clienteNombre || venta.empleadoNombreSnapshot || 'Sistema Web' }}</td>
+            <td>{{ venta.clienteCi || '-' }}</td>
             <td>{{ venta.metodoPago }}</td>
             <td>Bs. {{ fmt(venta.total) }}</td>
             <td>{{ venta.estado }}</td>
@@ -216,8 +242,39 @@ const { user } = useAuth();
 const productoForm = reactive({ id: null, nombre: '', descripcion: '', precio: 0, stock: 0, imagenUrl: '', categoriaId: '', activo: true });
 const categoriaForm = reactive({ id: null, nombre: '', descripcion: '', activo: true });
 const empleadoForm = reactive({ id: null, nombre: '', email: '', password: '', activo: true });
-const ventaForm = reactive({ id: null, clienteNombre: '', empleadoId: null, items: [], total: 0, metodoPago: 'efectivo', montoRecibido: null, notas: '' });
+const ventaForm = reactive({ id: null, clienteNombre: '', clienteCi: '', empleadoId: null, items: [], total: 0, metodoPago: 'efectivo', montoRecibido: null, notas: '' });
 const posSeleccion = reactive({ productoId: '', cantidad: 1 });
+const posCategoriaId = ref(null);
+
+const productosPorCategoria = computed(() => {
+  let lista = productos.value.filter(p => p.activo && p.stock >= 1);
+  if (posCategoriaId.value) {
+    lista = lista.filter(p => p.categoriaId === posCategoriaId.value);
+  }
+  return lista;
+});
+
+function getProductoPrecio(id) {
+  return productos.value.find(p => p.id === id)?.precio ?? 0;
+}
+
+function getProductoNombre(id) {
+  return productos.value.find(p => p.id === id)?.nombre ?? 'Producto';
+}
+
+function agregarUnProducto() {
+  if (!posSeleccion.productoId || posSeleccion.cantidad < 1) return;
+  const prod = productos.value.find(p => p.id === posSeleccion.productoId);
+  if (!prod) return;
+  const existe = ventaForm.items.find(i => i.productoId === posSeleccion.productoId);
+  if (existe) {
+    if (existe.cantidad < prod.stock) existe.cantidad += posSeleccion.cantidad;
+  } else {
+    ventaForm.items.push({ productoId: prod.id, cantidad: posSeleccion.cantidad });
+  }
+  posSeleccion.productoId = '';
+  posSeleccion.cantidad = 1;
+}
 
 const totalPOS = computed(() => {
   return ventaForm.items.reduce((acc, item) => {
@@ -227,32 +284,11 @@ const totalPOS = computed(() => {
   }, 0);
 });
 
-const cambioPOS = computed(() => {
-  if (!ventaForm.montoRecibido) return 0;
-  return ventaForm.montoRecibido - totalPOS.value;
-});
+const cambioPOS = ref(null);
 
-function getProductoNombre(id) {
-  return productos.value.find((p) => p.id === id)?.nombre || 'Producto Desconocido';
-}
-
-function agregarProductoPOS() {
-  if (!posSeleccion.productoId || posSeleccion.cantidad < 1) return;
-  const prod = productos.value.find(p => p.id === posSeleccion.productoId);
-  if (!prod || prod.stock < posSeleccion.cantidad) {
-    error.value = 'Stock insuficiente o producto no válido';
-    setTimeout(() => error.value = '', 3000);
-    return;
-  }
-  
-  const existe = ventaForm.items.find(i => i.productoId === posSeleccion.productoId);
-  if (existe) {
-    existe.cantidad += posSeleccion.cantidad;
-  } else {
-    ventaForm.items.push({ ...posSeleccion });
-  }
-  posSeleccion.productoId = '';
-  posSeleccion.cantidad = 1;
+function calcularCambio() {
+  if (!ventaForm.montoRecibido) return;
+  cambioPOS.value = ventaForm.montoRecibido - totalPOS.value;
 }
 
 const DataTable = defineComponent({
@@ -403,15 +439,31 @@ function eliminarEmpleado(id) {
 }
 
 function resetVenta() {
-  Object.assign(ventaForm, { id: null, clienteNombre: '', empleadoId: user.value?.id || null, items: [], total: 0, metodoPago: 'efectivo', montoRecibido: null, notas: '' });
-  posSeleccion.productoId = '';
+  Object.assign(ventaForm, { id: null, clienteNombre: '', clienteCi: '', empleadoId: user.value?.id || null, items: [], total: 0, metodoPago: 'efectivo', montoRecibido: null, notas: '' });
   posSeleccion.cantidad = 1;
+  posCategoriaId.value = null;
+  cambioPOS.value = null;
+}
+
+function procesarVenta() {
+  if (!ventaForm.id && ventaForm.items.length === 0) {
+    error.value = 'Debe añadir al menos un producto';
+    setTimeout(() => error.value = '', 3000);
+    return;
+  }
+  if (ventaForm.metodoPago === 'efectivo' && ventaForm.montoRecibido != null && ventaForm.montoRecibido < totalPOS.value) {
+    error.value = 'El monto recibido es menor al total';
+    setTimeout(() => error.value = '', 3000);
+    return;
+  }
+  guardarVenta();
 }
 
 function editarVenta(venta) {
   Object.assign(ventaForm, {
     id: venta.id,
     clienteNombre: venta.clienteNombre || '',
+    clienteCi: venta.clienteCi || '',
     empleadoId: venta.empleadoId || null,
     total: Number(venta.total),
     metodoPago: venta.metodoPago,
@@ -422,21 +474,17 @@ function editarVenta(venta) {
 
 function guardarVenta() {
   return withSave(async () => {
-    // Si hay un producto seleccionado en el dropdown POS sin agregar, añadirlo automáticamente
-    if (!ventaForm.id && posSeleccion.productoId && posSeleccion.cantidad >= 1) {
-      agregarProductoPOS();
-    }
-    
     if (!ventaForm.id && ventaForm.items.length === 0 && totalPOS.value === 0) {
       throw new Error('Debe añadir al menos un producto a la venta o usar otra interfaz');
     }
     
-    if (!ventaForm.id && ventaForm.metodoPago === 'efectivo' && ventaForm.montoRecibido !== null && ventaForm.montoRecibido < totalPOS.value) {
+    if (!ventaForm.id && ventaForm.metodoPago === 'efectivo' && ventaForm.montoRecibido != null && ventaForm.montoRecibido < totalPOS.value) {
       throw new Error('El monto recibido es menor al total de la compra');
     }
 
     const payload = {
       clienteNombre: ventaForm.clienteNombre || null,
+      clienteCi: ventaForm.clienteCi || null,
       empleadoId: ventaForm.empleadoId || null,
       total: ventaForm.id ? Number(ventaForm.total) : totalPOS.value,
       metodoPago: ventaForm.metodoPago,
@@ -493,5 +541,56 @@ onMounted(async () => {
 
 .actions-cell .btn + .btn {
   margin-left: 0.5rem;
+}
+
+.pos-items-list {
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  padding: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.pos-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(197,160,89,0.15);
+}
+
+.pos-item-row:last-child {
+  border-bottom: none;
+}
+
+.pos-item-nombre {
+  color: #fff;
+  font-size: 0.85rem;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.pos-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.pos-item-cant {
+  color: #d4af37;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+
+.pos-item-sub {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+  min-width: 70px;
+  text-align: right;
 }
 </style>

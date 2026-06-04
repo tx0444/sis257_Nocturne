@@ -32,6 +32,9 @@ export class Cliente {
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string | null;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  ci: string | null;
+
   @Column({ type: 'boolean', default: true })
   activo: boolean;
 

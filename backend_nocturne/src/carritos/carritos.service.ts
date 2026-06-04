@@ -14,6 +14,7 @@ import { Venta, EstadoVenta, MetodoPago } from '../ventas/entities/venta.entity'
 import { DetallesVenta } from '../detalles-ventas/entities/detalles-venta.entity';
 import { PagoSimulado } from '../pagos-simulados/entities/pago-simulado.entity';
 import { Producto } from '../productos/entities/producto.entity';
+import { Cliente } from '../clientes/entities/cliente.entity';
 
 @Injectable()
 export class CarritosService {
@@ -128,7 +129,7 @@ export class CarritosService {
 
   // Checkout: Procesar carrito y crear venta
   async checkout(checkoutDto: CheckoutCarritoDto): Promise<Venta> {
-    const { carritoId, metodoPago, datosTarjeta, clienteNombre, direccionEntrega, telefono, clienteId } = checkoutDto;
+    const { carritoId, metodoPago, datosTarjeta, direccionEntrega, clienteId } = checkoutDto;
 
     return this.dataSource.transaction(async (manager) => {
       // 1. Obtener carrito con items
@@ -149,7 +150,20 @@ export class CarritosService {
         throw new BadRequestException('El carrito está vacío');
       }
 
-      // 1.1 Calcular totales y validar integridad
+      // 1.1 Resolver cliente y extraer sus datos
+      let cliente: Cliente | null = null;
+      let clienteNombre: string | null = null;
+      let clienteCi: string | null = null;
+
+      if (clienteId) {
+        cliente = await manager.findOne(Cliente, { where: { id: clienteId } });
+        if (cliente) {
+          clienteNombre = cliente.nombre;
+          clienteCi = cliente.ci ?? null;
+        }
+      }
+
+      // 1.2 Calcular totales y validar integridad
       const detallesCalculados = carrito.items.map((item) => {
         const precioUnitario = Number(
           (item.producto?.precio ?? item.subtotal / item.cantidad).toFixed(2),
@@ -189,9 +203,10 @@ export class CarritosService {
         estado: EstadoVenta.COMPLETADA,
         empleadoId: null,
         empleadoNombreSnapshot: 'Sistema Web',
-        clienteId: clienteId ?? null,
-        clienteNombre: clienteNombre || null,
-        notas: `Pedido web - ${direccionEntrega || 'Sin dirección'} - Tel: ${telefono || 'N/A'}`,
+        clienteId: cliente?.id ?? null,
+        clienteNombre,
+        clienteCi,
+        notas: `Pedido web - ${direccionEntrega || 'Sin dirección'}`,
       });
       const ventaGuardada = await manager.save(Venta, venta);
 
@@ -255,9 +270,8 @@ export class CarritosService {
         codigoQr: pagoCodigoQr,
         numeroTarjeta,
         nombreTitular,
-        clienteNombre: clienteNombre || null,
+        clienteNombre,
         direccionEntrega: direccionEntrega || null,
-        telefono: telefono || null,
       });
       await manager.save(PagoSimulado, pago);
 

@@ -41,7 +41,7 @@ export class ClientesService {
   async findByEmail(email: string): Promise<Cliente | null> {
     return this.clientesRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'nombre', 'direccion', 'telefono', 'activo'],
+      select: ['id', 'email', 'password', 'nombre', 'direccion', 'telefono', 'ci', 'activo'],
     });
   }
 

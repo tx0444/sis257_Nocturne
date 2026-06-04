@@ -20,6 +20,7 @@ export function useAuth() {
         email: profile.email,
         direccion: profile.direccion,
         telefono: profile.telefono,
+        ci: profile.ci,
         rol: profile.rol || user.value?.rol || 'admin',
       };
     } catch {

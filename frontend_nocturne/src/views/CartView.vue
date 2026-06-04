@@ -65,16 +65,8 @@
           <div v-if="error" class="alert alert-danger small">{{ error }}</div>
 
           <div class="mb-3">
-            <label class="form-label small text-gold">Cliente</label>
-            <input v-model.trim="form.clienteNombre" class="form-control" required maxlength="100" />
-          </div>
-          <div class="mb-3">
             <label class="form-label small text-gold">Direccion de entrega</label>
             <input v-model.trim="form.direccionEntrega" class="form-control" required maxlength="200" />
-          </div>
-          <div class="mb-3">
-            <label class="form-label small text-gold">Telefono</label>
-            <input v-model.trim="form.telefono" class="form-control" required maxlength="20" />
           </div>
           <div class="mb-3">
             <label class="form-label small text-gold">Metodo de pago</label>
@@ -126,9 +118,7 @@ const showAuthModal = ref(false);
 const pendingSubmit = ref(false);
 
 const form = reactive({
-  clienteNombre: '',
   direccionEntrega: '',
-  telefono: '',
   metodoPago: 'qr',
   datosTarjeta: {
     numeroTarjeta: '4111111111111111',
@@ -139,10 +129,7 @@ const form = reactive({
 
 function syncUserData() {
   if (isLoggedIn.value && user.value) {
-    form.clienteNombre = user.value.nombre || '';
     form.direccionEntrega = user.value.direccion || '';
-    form.telefono = user.value.telefono || '';
-    form.datosTarjeta.nombreTitular = user.value.nombre || '';
   }
 }
 
@@ -207,9 +194,7 @@ async function confirmarCompra() {
     const payload = {
       carritoId: carrito.data.id,
       metodoPago: form.metodoPago,
-      clienteNombre: form.clienteNombre,
       direccionEntrega: form.direccionEntrega,
-      telefono: form.telefono,
       clienteId: user.value?.id ?? null,
     };
 

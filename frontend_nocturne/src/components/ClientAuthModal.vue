@@ -29,6 +29,10 @@
           <label class="form-label small text-gold">Teléfono (Opcional)</label>
           <input v-model.trim="form.telefono" type="text" class="form-control" />
         </div>
+        <div v-if="isRegister" class="mb-3">
+          <label class="form-label small text-gold">CI (Opcional)</label>
+          <input v-model.trim="form.ci" type="text" class="form-control" maxlength="20" />
+        </div>
 
         <button class="btn btn-gold w-100 mb-3" type="submit" :disabled="loading">
           {{ loading ? 'Procesando...' : (isRegister ? 'Registrarse' : 'Entrar') }}
@@ -63,6 +67,7 @@ const form = reactive({
   password: '',
   direccion: '',
   telefono: '',
+  ci: '',
 });
 
 function close() {

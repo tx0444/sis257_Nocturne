@@ -86,13 +86,13 @@ export class VentasService {
 
       let notasFinales = createVentaDto.notas ?? null;
 
-      // Validar montoRecibido si es efectivo
-      if (createVentaDto.metodoPago === 'efectivo' && createVentaDto.montoRecibido !== undefined) {
+      // Validar montoRecibido si es efectivo y tiene valor
+      if (createVentaDto.metodoPago === 'efectivo' && createVentaDto.montoRecibido != null) {
         if (createVentaDto.montoRecibido < totalCalculado) {
           throw new BadRequestException(`El monto recibido (Bs. ${createVentaDto.montoRecibido}) es menor al total (Bs. ${totalCalculado})`);
         }
         const cambio = createVentaDto.montoRecibido - totalCalculado;
-        notasFinales = notasFinales 
+        notasFinales = notasFinales
           ? `${notasFinales} | Monto Recibido: Bs. ${createVentaDto.montoRecibido} | Cambio: Bs. ${cambio.toFixed(2)}`
           : `Monto Recibido: Bs. ${createVentaDto.montoRecibido} | Cambio: Bs. ${cambio.toFixed(2)}`;
       }
@@ -100,6 +100,7 @@ export class VentasService {
       const venta = manager.create(Venta, {
         empleadoId: createVentaDto.empleadoId ?? null,
         clienteId: createVentaDto.clienteId ?? null,
+        clienteCi: cliente ? (cliente.ci ?? null) : (createVentaDto.clienteCi ?? null),
         fechaHora: new Date(),
         fechaVenta: fechaReferencia,
         total: totalCalculado,

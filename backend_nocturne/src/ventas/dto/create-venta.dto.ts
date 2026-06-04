@@ -57,6 +57,12 @@ export class CreateVentaDto {
   readonly clienteId?: number | null;
 
   @IsOptional()
+  @IsString({ message: 'El CI del cliente debe ser un texto' })
+  @MaxLength(20)
+  @Transform(({ value }) => toTrimmedStringOrNull(value))
+  readonly clienteCi?: string | null;
+
+  @IsOptional()
   @Transform(({ value }) => toDateOrUndefined(value))
   readonly fechaVenta?: Date;
 

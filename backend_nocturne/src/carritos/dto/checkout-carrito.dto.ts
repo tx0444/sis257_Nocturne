@@ -55,11 +55,6 @@ export class CheckoutCarritoDto {
   readonly datosTarjeta?: DatosTarjetaDto;
 
   @IsOptional()
-  @IsString({ message: 'El nombre del cliente debe ser texto' })
-  @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
-  readonly clienteNombre?: string;
-
-  @IsOptional()
   @IsString({ message: 'La dirección debe ser texto' })
   @MaxLength(200, { message: 'La dirección no puede exceder 200 caracteres' })
   readonly direccionEntrega?: string;
@@ -68,9 +63,4 @@ export class CheckoutCarritoDto {
   @Type(() => Number)
   @IsInt({ message: 'El clienteId debe ser un número entero' })
   readonly clienteId?: number;
-
-  @IsOptional()
-  @IsString({ message: 'El teléfono debe ser texto' })
-  @MaxLength(20, { message: 'El teléfono no puede exceder 20 caracteres' })
-  readonly telefono?: string;
 }
