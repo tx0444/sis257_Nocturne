@@ -1,39 +1,41 @@
-import { Producto } from 'src/productos/entities/producto.entity';
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Producto } from '../../productos/entities/producto.entity';
 
 @Entity('categorias')
 export class Categoria {
-  @PrimaryGeneratedColumn('identity') // el identity es para que sea autoincremental
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
+  @Column({ length: 100 })
   nombre: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ length: 255, nullable: true })
   descripcion: string;
 
-  @Column({ type: 'boolean', default: true })
-  activo: boolean;
+  @Column({ length: 500, nullable: true })
+  imagen: string;
 
-  @CreateDateColumn({ name: 'fecha_creacion' })
+  @Column({ default: true })
+  estado: boolean;
+
+  @CreateDateColumn({ name: 'fecha_creacion', type: 'timestamp' })
   fechaCreacion: Date;
 
-  @UpdateDateColumn({ name: 'fecha_modificacion' })
+  @UpdateDateColumn({ name: 'fecha_modificacion', type: 'timestamp' })
   fechaModificacion: Date;
 
-  @DeleteDateColumn({ name: 'fecha_eliminacion', select: false })
+  @DeleteDateColumn({ name: 'fecha_eliminacion', type: 'timestamp', nullable: true })
   fechaEliminacion: Date;
 
-  //Una categoria puede tener muchos productos
-
+  // Relaciones
   @OneToMany(() => Producto, (producto) => producto.categoria)
   productos: Producto[];
 }

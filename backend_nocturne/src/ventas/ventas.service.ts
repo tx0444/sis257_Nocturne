@@ -1,153 +1,269 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { Empleado } from 'src/empleados/entities/empleado.entity';
-import { Cliente } from 'src/clientes/entities/cliente.entity';
-import { Producto } from 'src/productos/entities/producto.entity';
-import { DetallesVenta } from 'src/detalles-ventas/entities/detalles-venta.entity';
+import { Repository, DataSource } from 'typeorm';
+import { Venta, EstadoVenta } from './entities/venta.entity';
+import { DetalleVenta } from '../detalles-venta/entities/detalle-venta.entity';
+import { Producto } from '../productos/entities/producto.entity';
+import { Pago } from '../pagos/entities/pago.entity';
+import { Cliente } from '../clientes/entities/cliente.entity';
 import { CreateVentaDto } from './dto/create-venta.dto';
-import { UpdateVentaDto } from './dto/update-venta.dto';
-import { EstadoVenta, Venta } from './entities/venta.entity';
-
-const hasDatabaseCode = (error: unknown): error is { code: string } =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  typeof (error as { code: unknown }).code === 'string';
+import { AuditoriaService } from '../auditoria/auditoria.service';
+import { Usuario } from '../usuarios/entities/usuario.entity';
+import { ComboProducto } from '../productos/entities/combo-producto.entity';
+import { Delivery } from './entities/delivery.entity';
+import { Caja } from '../cajas/entities/caja.entity';
 
 @Injectable()
 export class VentasService {
   constructor(
     @InjectRepository(Venta)
-    private ventasRepository: Repository<Venta>,
-    @InjectRepository(Empleado)
-    private empleadosRepository: Repository<Empleado>,
-    private dataSource: DataSource,
+    private readonly ventaRepository: Repository<Venta>,
+    @InjectRepository(DetalleVenta)
+    private readonly detalleVentaRepository: Repository<DetalleVenta>,
+    @InjectRepository(Producto)
+    private readonly productoRepository: Repository<Producto>,
+    @InjectRepository(Pago)
+    private readonly pagoRepository: Repository<Pago>,
+    @InjectRepository(Cliente)
+    private readonly clienteRepository: Repository<Cliente>,
+    private readonly dataSource: DataSource,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
-  async create(createVentaDto: CreateVentaDto): Promise<Venta> {
-    return this.dataSource.transaction(async (manager) => {
-      const fechaReferencia = createVentaDto.fechaVenta ?? new Date();
-
-      let empleado: Empleado | null = null;
-      if (createVentaDto.empleadoId) {
-        empleado = await manager.findOne(Empleado, {
-          where: { id: createVentaDto.empleadoId },
-        });
-        if (!empleado) {
-          throw new NotFoundException(`Empleado ${createVentaDto.empleadoId} no existe`);
-        }
-      }
-
-      let cliente: Cliente | null = null;
-      if (createVentaDto.clienteId) {
-        cliente = await manager.findOne(Cliente, {
-          where: { id: createVentaDto.clienteId },
-        });
-        if (!cliente) {
-          throw new NotFoundException(`Cliente ${createVentaDto.clienteId} no existe`);
-        }
-      }
-
-      let totalCalculado = createVentaDto.total ?? 0;
-      const detallesAGuardar: Partial<DetallesVenta>[] = [];
-
-      // Si vienen items, calculamos el total y verificamos stock
-      if (createVentaDto.items && createVentaDto.items.length > 0) {
-        totalCalculado = 0;
-        for (const item of createVentaDto.items) {
-          const producto = await manager.findOne(Producto, { where: { id: item.productoId } });
-          if (!producto) {
-            throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-          }
-          if (producto.stock < item.cantidad) {
-            throw new BadRequestException(`Stock insuficiente para ${producto.nombre}`);
-          }
-          // Descontar stock
-          producto.stock -= item.cantidad;
-          await manager.save(Producto, producto);
-
-          const subtotal = Number((producto.precio * item.cantidad).toFixed(2));
-          totalCalculado += subtotal;
-
-          detallesAGuardar.push({
-            productoId: producto.id,
-            cantidad: item.cantidad,
-            precioUnitario: producto.precio,
-            subtotal,
-          });
-        }
-      }
-
-      let notasFinales = createVentaDto.notas ?? null;
-
-      // Validar montoRecibido si es efectivo y tiene valor
-      if (createVentaDto.metodoPago === 'efectivo' && createVentaDto.montoRecibido != null) {
-        if (createVentaDto.montoRecibido < totalCalculado) {
-          throw new BadRequestException(`El monto recibido (Bs. ${createVentaDto.montoRecibido}) es menor al total (Bs. ${totalCalculado})`);
-        }
-        const cambio = createVentaDto.montoRecibido - totalCalculado;
-        notasFinales = notasFinales
-          ? `${notasFinales} | Monto Recibido: Bs. ${createVentaDto.montoRecibido} | Cambio: Bs. ${cambio.toFixed(2)}`
-          : `Monto Recibido: Bs. ${createVentaDto.montoRecibido} | Cambio: Bs. ${cambio.toFixed(2)}`;
-      }
-
-      const venta = manager.create(Venta, {
-        empleadoId: createVentaDto.empleadoId ?? null,
-        clienteId: createVentaDto.clienteId ?? null,
-        clienteCi: cliente ? (cliente.ci ?? null) : (createVentaDto.clienteCi ?? null),
-        fechaHora: new Date(),
-        fechaVenta: fechaReferencia,
-        total: totalCalculado,
-        metodoPago: createVentaDto.metodoPago,
-        clienteNombre: cliente ? cliente.nombre : (createVentaDto.clienteNombre ?? null),
-        notas: notasFinales,
-        estado: EstadoVenta.COMPLETADA,
-        empleadoNombreSnapshot: empleado?.nombre ?? 'Sistema Web',
-      });
-
-      const ventaGuardada = await manager.save(Venta, venta);
-
-      // Guardar detalles
-      for (const det of detallesAGuardar) {
-        const detalle = manager.create(DetallesVenta, {
-          ...det,
-          ventaId: ventaGuardada.id,
-        });
-        await manager.save(DetallesVenta, detalle);
-      }
-
-      return manager.findOne(Venta, {
-        where: { id: ventaGuardada.id },
-        relations: ['detallesVentas', 'empleado', 'cliente'],
-      }) as Promise<Venta>;
+  /**
+   * Busca o crea el cliente "Consumidor Final" con CI/NIT "0"
+   * Se usa cuando no se especifica clienteId en la venta.
+   */
+  private async getConsumidorFinal(manager: any): Promise<Cliente> {
+    let consumidor = await manager.findOne(Cliente, {
+      where: { ciNit: '0', nombre: 'Cliente', apellido: 'Ocasional' },
     });
+    if (!consumidor) {
+      consumidor = manager.create(Cliente, {
+        nombre: 'Cliente',
+        apellido: 'Ocasional',
+        ciNit: '0',
+        estado: true,
+      });
+      consumidor = await manager.save(consumidor);
+    }
+    return consumidor;
+  }
+
+  async create(createVentaDto: CreateVentaDto, usuarioAutenticado: Usuario | null = null): Promise<Venta> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const {
+        detalles,
+        pagos,
+        clienteId,
+        comprobanteQr,
+        tipoEntrega,
+        direccion,
+        referencia,
+        telefonoContacto,
+        costoDelivery,
+        latitud,
+        longitud,
+        ...ventaData
+      } = createVentaDto;
+
+      // Resolver cliente: si no se provee clienteId, usar Consumidor Final
+      let resolvedClienteId: number;
+      if (clienteId) {
+        resolvedClienteId = clienteId;
+      } else {
+        const consumidor = await this.getConsumidorFinal(queryRunner.manager);
+        resolvedClienteId = consumidor.id;
+      }
+
+      // Buscar caja activa para el usuario autenticado
+      let resolvedCajaId: number | null = null;
+      if (usuarioAutenticado) {
+        const activeCaja = await queryRunner.manager.findOne(Caja, {
+          where: { usuarioId: usuarioAutenticado.id, estado: 'Abierta' },
+        });
+        if (activeCaja) {
+          resolvedCajaId = activeCaja.id;
+        }
+      }
+
+      // Validar stock y calcular total
+      let total = 0;
+      for (const det of detalles) {
+        const producto = await queryRunner.manager.findOne(Producto, {
+          where: { id: det.productoId },
+        });
+        if (!producto) {
+          throw new NotFoundException(`Producto con ID ${det.productoId} no encontrado`);
+        }
+
+        if (producto.esCombo) {
+          // Validar subproductos (soportando componentes personalizados enviados desde el frontend)
+          const comboItems = det.componentes && det.componentes.length > 0
+            ? det.componentes
+            : await queryRunner.manager.find(ComboProducto, {
+                where: { comboId: producto.id }
+              });
+          if (comboItems.length === 0) {
+            throw new BadRequestException(`El combo "${producto.nombre}" no tiene productos asociados.`);
+          }
+          for (const item of comboItems) {
+            const subProduct = await queryRunner.manager.findOne(Producto, {
+              where: { id: item.productoId }
+            });
+            if (!subProduct) {
+              throw new NotFoundException(`Subproducto con ID ${item.productoId} del combo no encontrado`);
+            }
+            const subUnidadesAComprar = item.cantidad * det.cantidad;
+            if (Number(subProduct.stock) < subUnidadesAComprar) {
+              throw new BadRequestException(
+                `Stock insuficiente para el componente "${subProduct.nombre}" del combo "${producto.nombre}". Disponible: ${subProduct.stock}, Requerido: ${subUnidadesAComprar}`
+              );
+            }
+          }
+        } else {
+          // Validar producto base
+          const tipoVenta = det.tipoVenta || 'Unidad';
+          const unidadesPorCaja = producto.unidadesPorCaja || 1;
+          const unidadesAComprar = tipoVenta === 'Caja' ? det.cantidad * unidadesPorCaja : det.cantidad;
+
+          if (Number(producto.stock) < unidadesAComprar) {
+            throw new BadRequestException(
+              `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}, Solicitado: ${unidadesAComprar} (en ${tipoVenta}s)`,
+            );
+          }
+        }
+        total += det.cantidad * det.precio;
+      }
+
+      // Crear venta
+      const venta = queryRunner.manager.create(Venta, {
+        ...ventaData,
+        clienteId: resolvedClienteId,
+        total,
+        fecha: new Date(),
+        estado: (ventaData.estado as EstadoVenta) || 'Confirmada',
+        comprobanteQr: comprobanteQr || undefined,
+        tipoEntrega: tipoEntrega || 'Tienda',
+        direccionEntrega: tipoEntrega === 'Delivery' ? (direccion || undefined) : undefined,
+        cajaId: resolvedCajaId,
+      });
+      const savedVenta = await queryRunner.manager.save(venta);
+
+      // Crear delivery si corresponde
+      if (tipoEntrega === 'Delivery') {
+        const delivery = queryRunner.manager.create(Delivery, {
+          ventaId: savedVenta.id,
+          direccion: direccion || 'Sin dirección',
+          referencia: referencia || undefined,
+          telefonoContacto: telefonoContacto || '00000000',
+          costoDelivery: costoDelivery !== undefined ? costoDelivery : 10.00,
+          latitud: latitud || null,
+          longitud: longitud || null,
+          estado: 'Pendiente',
+        });
+        await queryRunner.manager.save(delivery);
+      }
+
+      // Crear detalles y descontar stock
+      for (const det of detalles) {
+        const subtotal = det.cantidad * det.precio;
+        const detalle = queryRunner.manager.create(DetalleVenta, {
+          ventaId: savedVenta.id,
+          productoId: det.productoId,
+          cantidad: det.cantidad,
+          precio: det.precio,
+          subtotal,
+          tipoVenta: det.tipoVenta || 'Unidad',
+          conHielo: det.conHielo || false,
+        });
+        await queryRunner.manager.save(detalle);
+
+        // Descontar stock
+        const producto = await queryRunner.manager.findOne(Producto, {
+          where: { id: det.productoId },
+        });
+
+        if (producto!.esCombo) {
+          // Descontar de subproductos
+          const comboItems = det.componentes && det.componentes.length > 0
+            ? det.componentes
+            : await queryRunner.manager.find(ComboProducto, {
+                where: { comboId: producto!.id }
+              });
+          for (const item of comboItems) {
+            const subProduct = await queryRunner.manager.findOne(Producto, {
+              where: { id: item.productoId }
+            });
+            if (subProduct) {
+              const subUnidadesARestar = item.cantidad * det.cantidad;
+              subProduct.stock = Number(subProduct.stock) - subUnidadesARestar;
+              await queryRunner.manager.save(subProduct);
+            }
+          }
+          // También descontamos del combo en sí para mantener coherencia si se muestra stock del combo
+          producto!.stock = Number(producto!.stock) - det.cantidad;
+          await queryRunner.manager.save(producto!);
+        } else {
+          // Descontar del producto base
+          const tipoVenta = det.tipoVenta || 'Unidad';
+          const unidadesPorCaja = producto!.unidadesPorCaja || 1;
+          const unidadesARestar = tipoVenta === 'Caja' ? det.cantidad * unidadesPorCaja : det.cantidad;
+
+          producto!.stock = Number(producto!.stock) - unidadesARestar;
+          await queryRunner.manager.save(producto!);
+        }
+      }
+
+      // Registrar pagos
+      for (const pago of pagos) {
+        const pagoEntity = queryRunner.manager.create(Pago, {
+          ventaId: savedVenta.id,
+          metodoPagoId: pago.metodoPagoId,
+          monto: pago.monto,
+          montoRecibido: pago.montoRecibido || pago.monto,
+          cambio: pago.cambio || 0,
+          fecha: new Date(),
+        });
+        await queryRunner.manager.save(pagoEntity);
+      }
+
+      await queryRunner.commitTransaction();
+
+      // Registrar en la auditoría
+      const totalDetallesStr = detalles.map(d => `ProdID: ${d.productoId} (Cant: ${d.cantidad})`).join(', ');
+      await this.auditoriaService.registrar(
+        usuarioAutenticado,
+        'CREAR',
+        'VENTAS',
+        savedVenta.id,
+        `Se registró la venta #${savedVenta.id} por un total de Bs. ${total.toFixed(2)}. ClienteID: ${resolvedClienteId}. Detalles: [${totalDetallesStr}]`,
+      );
+
+      return this.findOne(savedVenta.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findAll(): Promise<Venta[]> {
-    return this.ventasRepository.find({
-      relations: ['empleado', 'cliente'],
-      order: { fechaHora: 'DESC' },
-    });
-  }
-
-  async findByCliente(clienteId: number): Promise<Venta[]> {
-    return this.ventasRepository.find({
-      where: { clienteId },
-      relations: ['detallesVentas', 'detallesVentas.producto'],
-      order: { fechaHora: 'DESC' },
+    return this.ventaRepository.find({
+      relations: ['cliente', 'usuario', 'detalles', 'detalles.producto', 'pagos', 'pagos.metodoPago'],
+      order: { fecha: 'DESC' },
     });
   }
 
   async findOne(id: number): Promise<Venta> {
-    const venta = await this.ventasRepository.findOne({
+    const venta = await this.ventaRepository.findOne({
       where: { id },
-      relations: ['detallesVentas', 'empleado', 'cliente'],
+      relations: ['cliente', 'usuario', 'detalles', 'detalles.producto', 'pagos', 'pagos.metodoPago'],
     });
     if (!venta) {
       throw new NotFoundException(`Venta con ID ${id} no encontrada`);
@@ -155,26 +271,55 @@ export class VentasService {
     return venta;
   }
 
-  async update(id: number, updateVentaDto: UpdateVentaDto): Promise<Venta> {
-    const partial: Partial<Venta> = { id };
-    
-    // Simplificado para no hacer el archivo tan largo y ya que `update` de ventas
-    // generalmente no debería cambiar los items o stocks en este sistema básico.
-    if (updateVentaDto.total !== undefined) partial.total = updateVentaDto.total;
-    if (updateVentaDto.metodoPago !== undefined) partial.metodoPago = updateVentaDto.metodoPago;
-    if (updateVentaDto.clienteNombre !== undefined) partial.clienteNombre = updateVentaDto.clienteNombre;
-    if (updateVentaDto.notas !== undefined) partial.notas = updateVentaDto.notas;
+  /**
+   * Cambia el estado de una venta (Pendiente -> Confirmada -> Entregada | Anulada)
+   */
+  async cambiarEstado(id: number, estado: EstadoVenta, usuarioAutenticado: Usuario | null = null): Promise<Venta> {
+    const venta = await this.findOne(id);
+    const estadoAnterior = venta.estado;
+    venta.estado = estado;
+    const updated = await this.ventaRepository.save(venta);
 
-    const preloaded = await this.ventasRepository.preload(partial);
-    if (!preloaded) {
-      throw new NotFoundException(`Venta con ID ${id} no encontrada`);
-    }
+    await this.auditoriaService.registrar(
+      usuarioAutenticado,
+      'EDITAR',
+      'VENTAS',
+      id,
+      `Se cambió el estado de la venta #${id} de "${estadoAnterior}" a "${estado}".`,
+    );
 
-    return this.ventasRepository.save(preloaded);
+    return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  /**
+   * Actualiza el comprobante QR de una venta
+   */
+  async actualizarComprobante(id: number, comprobanteQr: string, usuarioAutenticado: Usuario | null = null): Promise<Venta> {
     const venta = await this.findOne(id);
-    await this.ventasRepository.softRemove(venta);
+    venta.comprobanteQr = comprobanteQr;
+    const updated = await this.ventaRepository.save(venta);
+
+    await this.auditoriaService.registrar(
+      usuarioAutenticado,
+      'EDITAR',
+      'VENTAS',
+      id,
+      `Se adjuntó comprobante QR a la venta #${id}: ${comprobanteQr}`,
+    );
+
+    return updated;
+  }
+
+  async remove(id: number, usuarioAutenticado: Usuario | null = null): Promise<void> {
+    const venta = await this.findOne(id);
+    await this.ventaRepository.softRemove(venta);
+
+    await this.auditoriaService.registrar(
+      usuarioAutenticado,
+      'ELIMINAR',
+      'VENTAS',
+      id,
+      `Se anuló/eliminó la venta #${id} con un total de Bs. ${Number(venta.total).toFixed(2)}. Cliente: ${venta.cliente?.nombre || 'N/A'} ${venta.cliente?.apellido || 'N/A'}.`,
+    );
   }
 }

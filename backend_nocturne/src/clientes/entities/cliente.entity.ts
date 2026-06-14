@@ -5,68 +5,46 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  BeforeInsert,
-  BeforeUpdate,
   OneToMany,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { Venta } from 'src/ventas/entities/venta.entity';
+import { Venta } from '../../ventas/entities/venta.entity';
 
 @Entity('clientes')
 export class Cliente {
-  @PrimaryGeneratedColumn('identity')
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 150, nullable: false })
+  @Column({ length: 100 })
   nombre: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false, unique: true })
-  email: string;
+  @Column({ length: 100 })
+  apellido: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false, select: false })
-  password: string;
+  @Column({ name: 'ci_nit', length: 50, nullable: true })
+  ciNit: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  direccion: string | null;
+  @Column({ length: 20, nullable: true })
+  telefono: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  telefono: string | null;
+  @Column({ length: 100, nullable: true })
+  correo: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  ci: string | null;
+  @Column({ length: 255, nullable: true })
+  direccion: string;
 
-  @Column({ type: 'boolean', default: true })
-  activo: boolean;
+  @Column({ default: true })
+  estado: boolean;
 
-  @CreateDateColumn({ name: 'fecha_creacion' })
+  @CreateDateColumn({ name: 'fecha_creacion', type: 'timestamp' })
   fechaCreacion: Date;
 
-  @UpdateDateColumn({ name: 'fecha_modificacion' })
+  @UpdateDateColumn({ name: 'fecha_modificacion', type: 'timestamp' })
   fechaModificacion: Date;
 
-  @DeleteDateColumn({ name: 'fecha_eliminacion', select: false })
+  @DeleteDateColumn({ name: 'fecha_eliminacion', type: 'timestamp', nullable: true })
   fechaEliminacion: Date;
 
+  // Relaciones
   @OneToMany(() => Venta, (venta) => venta.cliente)
   ventas: Venta[];
-
-  @BeforeInsert()
-  async hashPasswordOnInsert() {
-    if (this.password) {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    }
-  }
-
-  @BeforeUpdate()
-  async hashPasswordOnUpdate() {
-    if (this.password && !this.password.match(/^\$2[ayb]\$/)) {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    }
-  }
-
-  async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
-  }
 }

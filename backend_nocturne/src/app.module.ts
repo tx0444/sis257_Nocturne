@@ -1,83 +1,81 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { EmpleadosModule } from './empleados/empleados.module';
-import { CategoriasModule } from './categorias/categorias.module';
-import { ProductosModule } from './productos/productos.module';
-import { VentasModule } from './ventas/ventas.module';
-import { DetallesVentasModule } from './detalles-ventas/detalles-ventas.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
-import { AuthModule } from './auth/auth.module';
-import { ReportesModule } from './reportes/reportes.module';
-import { SeedModule } from './seed/seed.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
-import { CarritosModule } from './carritos/carritos.module';
-import { CarritoItemsModule } from './carrito-items/carrito-items.module';
-import { PagosSimuladosModule } from './pagos-simulados/pagos-simulados.module';
+import { ConfigModule } from '@nestjs/config';
+
+// Entidades
+import { Rol } from './roles/entities/rol.entity';
+import { Usuario } from './usuarios/entities/usuario.entity';
+import { Categoria } from './categorias/entities/categoria.entity';
+import { Marca } from './marcas/entities/marca.entity';
+import { Proveedor } from './proveedores/entities/proveedor.entity';
+import { Cliente } from './clientes/entities/cliente.entity';
+import { Producto } from './productos/entities/producto.entity';
+import { Compra } from './compras/entities/compra.entity';
+import { DetalleCompra } from './detalles-compra/entities/detalle-compra.entity';
+import { Venta } from './ventas/entities/venta.entity';
+import { DetalleVenta } from './detalles-venta/entities/detalle-venta.entity';
+import { MetodoPago } from './metodos-pago/entities/metodo-pago.entity';
+import { Pago } from './pagos/entities/pago.entity';
+import { Auditoria } from './auditoria/entities/auditoria.entity';
+import { Promocion } from './promociones/entities/promocion.entity';
+import { ComboProducto } from './productos/entities/combo-producto.entity';
+import { Delivery } from './ventas/entities/delivery.entity';
+import { Caja } from './cajas/entities/caja.entity';
+
+// Módulos
+import { RolesModule } from './roles/roles.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { CategoriasModule } from './categorias/categorias.module';
+import { MarcasModule } from './marcas/marcas.module';
+import { ProveedoresModule } from './proveedores/proveedores.module';
 import { ClientesModule } from './clientes/clientes.module';
+import { ProductosModule } from './productos/productos.module';
+import { ComprasModule } from './compras/compras.module';
+import { VentasModule } from './ventas/ventas.module';
+import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
+import { AuthModule } from './auth/auth.module';
+import { SeederModule } from './seeders/seeder.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
+import { PromocionesModule } from './promociones/promociones.module';
+import { CajasModule } from './cajas/cajas.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => [
-        {
-          ttl: Number(configService.get<string>('THROTTLE_TTL', '60000')),
-          limit: Number(configService.get<string>('THROTTLE_LIMIT', '10')),
-        },
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || '123456',
+      database: process.env.DB_NAME || 'sis257_lafortaleza',
+      entities: [
+        Rol, Usuario, Categoria, Marca, Proveedor, Cliente,
+        Producto, Compra, DetalleCompra, Venta, DetalleVenta,
+        MetodoPago, Pago, Auditoria, Promocion, ComboProducto, Delivery, Caja,
       ],
+      synchronize: true, // Solo para desarrollo
+      logging: false,
+      ssl: process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const synchronizeFromEnv =
-          configService.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
-        const seedOnBoot =
-          configService.get<string>('SEED_ON_BOOT', 'false') === 'true';
-        return {
-          type: 'postgres',
-          host: configService.get<string>('DB_HOST'),
-          port: Number(configService.get<string>('DB_PORT')),
-          username: configService.get<string>('DB_USERNAME'),
-          password: configService.get<string>('DB_PASSWORD'),
-          database: configService.get<string>('DB_NAME'),
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          namingStrategy: new SnakeNamingStrategy(),
-          synchronize: synchronizeFromEnv || seedOnBoot,
-          logging: false,
-        };
-      },
-      inject: [ConfigService],
-    }),
-    EmpleadosModule,
+    // Módulos del sistema
+    RolesModule,
+    UsuariosModule,
     CategoriasModule,
-    ProductosModule,
-    VentasModule,
-    DetallesVentasModule,
-    AuthModule,
-    ReportesModule,
-    SeedModule,
-    CarritosModule,
-    CarritoItemsModule,
-    PagosSimuladosModule,
+    MarcasModule,
+    ProveedoresModule,
     ClientesModule,
-  ],
-  controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    ProductosModule,
+    ComprasModule,
+    VentasModule,
+    MetodosPagoModule,
+    AuthModule,
+    SeederModule,
+    AuditoriaModule,
+    PromocionesModule,
+    CajasModule,
   ],
 })
 export class AppModule {}

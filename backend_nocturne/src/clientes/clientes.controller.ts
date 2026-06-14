@@ -1,43 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
-import { JwtAccessAuthGuard } from '../auth/guards/jwt-access-auth.guard';
-import { Public } from '../auth/decorators/auth-public.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('clientes')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('clientes')
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}
 
-  @Public()
   @Post()
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
-  create(@Body() createClienteDto: CreateClienteDto) {
-    return this.clientesService.create(createClienteDto);
+  @ApiOperation({ summary: 'Crear un cliente' })
+  create(@Body() createClienteDto: CreateClienteDto, @Request() req: any) {
+    return this.clientesService.create(createClienteDto, req.user);
   }
 
-  @UseGuards(JwtAccessAuthGuard)
   @Get()
+  @ApiOperation({ summary: 'Obtener todos los clientes' })
   findAll() {
     return this.clientesService.findAll();
   }
 
-  @UseGuards(JwtAccessAuthGuard)
+  @Get('buscar')
+  @ApiOperation({ summary: 'Buscar clientes por nombre, apellido o CI/NIT (tiempo real)' })
+  @ApiQuery({ name: 'q', description: 'Término de búsqueda', required: true })
+  buscar(@Query('q') termino: string) {
+    return this.clientesService.buscar(termino);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.clientesService.findOne(+id);
+  @ApiOperation({ summary: 'Obtener un cliente por ID' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.clientesService.findOne(id);
   }
 
-  @UseGuards(JwtAccessAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClienteDto: UpdateClienteDto) {
-    return this.clientesService.update(+id, updateClienteDto);
+  @ApiOperation({ summary: 'Actualizar un cliente' })
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateClienteDto: UpdateClienteDto, @Request() req: any) {
+    return this.clientesService.update(id, updateClienteDto, req.user);
   }
 
-  @UseGuards(JwtAccessAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.clientesService.remove(+id);
+  @ApiOperation({ summary: 'Eliminar (soft) un cliente' })
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.clientesService.remove(id, req.user);
   }
 }

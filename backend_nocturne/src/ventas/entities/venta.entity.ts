@@ -1,7 +1,3 @@
-import { Cliente } from 'src/clientes/entities/cliente.entity';
-import { DetallesVenta } from 'src/detalles-ventas/entities/detalles-venta.entity';
-import { Empleado } from 'src/empleados/entities/empleado.entity';
-import { PagoSimulado } from 'src/pagos-simulados/entities/pago-simulado.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,107 +6,78 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  JoinColumn,
   OneToMany,
-  Index,
+  JoinColumn,
+  OneToOne,
 } from 'typeorm';
+import { Cliente } from '../../clientes/entities/cliente.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { DetalleVenta } from '../../detalles-venta/entities/detalle-venta.entity';
+import { Pago } from '../../pagos/entities/pago.entity';
+import { Delivery } from './delivery.entity';
 
-export enum MetodoPago {
-  EFECTIVO = 'efectivo',
-  TARJETA = 'tarjeta',
-  TRANSFERENCIA = 'transferencia',
-  QR = 'qr',
-}
-
-export enum EstadoVenta {
-  COMPLETADA = 'completada',
-  DEVOLUCION = 'devolucion',
-  BORRADOR = 'borrador',
-  ANULADA = 'anulada',
-}
+export type EstadoVenta = 'Pendiente' | 'Confirmada' | 'Entregada' | 'Anulada';
 
 @Entity('ventas')
 export class Venta {
-  @PrimaryGeneratedColumn('identity')
+  @PrimaryGeneratedColumn()
   id: number;
 
-  // Fecha/hora de la venta en UTC (para reportes)
-  @Index()
-  @Column({
-    type: 'timestamptz',
-    nullable: false,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  fechaHora: Date;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  fecha: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  fechaVenta?: Date | null;
-
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    nullable: false,
-    transformer: {
-      to: (value: number | null) => value,
-      from: (value: string | null) => (value !== null ? Number(value) : null),
-    },
-  })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   total: number;
 
   @Column({
-    type: 'enum',
-    enum: MetodoPago,
-    nullable: false,
+    type: 'varchar',
+    length: 20,
+    default: 'Confirmada',
   })
-  metodoPago: MetodoPago;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  clienteNombre?: string | null;
-
-  @Column({ name: 'cliente_id', type: 'int', nullable: true })
-  clienteId?: number | null;
-
-  @Column({ name: 'cliente_ci', type: 'varchar', length: 20, nullable: true })
-  clienteCi?: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  notas?: string | null;
-
-  @Column({ name: 'empleado_id', type: 'int', nullable: true })
-  empleadoId?: number | null;
-
-  // Snapshot de nombre del empleado al momento de la venta (nullable para ventas online)
-  @Column({ type: 'varchar', length: 120, nullable: true })
-  empleadoNombreSnapshot?: string | null;
-
-  @Index()
-  @Column({ type: 'enum', enum: EstadoVenta, default: EstadoVenta.COMPLETADA })
   estado: EstadoVenta;
 
-  @CreateDateColumn()
+  @Column({ name: 'comprobante_qr', type: 'varchar', length: 500, nullable: true })
+  comprobanteQr: string | null;
+
+  @Column({ name: 'direccion_entrega', type: 'varchar', length: 500, nullable: true })
+  direccionEntrega: string | null;
+
+  @Column({ name: 'tipo_entrega', type: 'varchar', length: 50, default: 'Tienda' })
+  tipoEntrega: string; // 'Tienda' | 'Delivery'
+
+  @OneToOne(() => Delivery, (delivery) => delivery.venta, { nullable: true, cascade: true })
+  delivery: Delivery;
+
+  @Column({ name: 'caja_id', type: 'integer', nullable: true })
+  cajaId: number | null;
+
+  @CreateDateColumn({ name: 'fecha_creacion', type: 'timestamp' })
   fechaCreacion: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'fecha_modificacion', type: 'timestamp' })
   fechaModificacion: Date;
 
-  @DeleteDateColumn({ select: false })
+  @DeleteDateColumn({ name: 'fecha_eliminacion', type: 'timestamp', nullable: true })
   fechaEliminacion: Date;
 
-  //Muchas ventas a un empleado (nullable para ventas de carrito online sin empleado)
-  @ManyToOne(() => Empleado, (empleado) => empleado.ventas, { nullable: true })
-  @JoinColumn({ name: 'empleado_id' })
-  empleado?: Empleado | null;
-
+  // Relaciones
   @ManyToOne(() => Cliente, (cliente) => cliente.ventas, { nullable: true })
   @JoinColumn({ name: 'cliente_id' })
-  cliente?: Cliente | null;
+  cliente: Cliente;
 
-  // Una venta puede tener muchos detalles de venta (apunta a tabla detalles_ventas)
-  @OneToMany(() => DetallesVenta, (detallesVenta) => detallesVenta.venta)
-  detallesVentas: DetallesVenta[];
+  @Column({ name: 'cliente_id', type: 'integer', nullable: true })
+  clienteId: number | null;
 
-  // Una venta puede tener muchos pagos simulados
-  @OneToMany(() => PagoSimulado, (pago) => pago.venta)
-  pagosSimulados: PagoSimulado[];
+  @ManyToOne(() => Usuario, (usuario) => usuario.ventas)
+  @JoinColumn({ name: 'usuario_id' })
+  usuario: Usuario;
+
+  @Column({ name: 'usuario_id' })
+  usuarioId: number;
+
+  @OneToMany(() => DetalleVenta, (detalle) => detalle.venta)
+  detalles: DetalleVenta[];
+
+  @OneToMany(() => Pago, (pago) => pago.venta)
+  pagos: Pago[];
 }

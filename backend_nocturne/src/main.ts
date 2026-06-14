@@ -1,82 +1,44 @@
-// src/main.ts
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
-import { csrfMiddleware } from './common/middlewares/csrf.middleware';
-import { helmetConfig } from './common/utils/helmet-config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-
-type TrustProxyCapable = { set: (setting: string, value: unknown) => void };
-
-const canSetTrustProxy = (value: unknown): value is TrustProxyCapable =>
-  typeof value === 'object' &&
-  value !== null &&
-  'set' in value &&
-  typeof (value as { set: unknown }).set === 'function';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const csrfEnabled =
-    (process.env.CSRF_ENABLED || 'true').toLowerCase() === 'true';
-  const trustProxy =
-    (process.env.TRUST_PROXY || 'false').toLowerCase() === 'true';
 
-  app.use(helmetConfig());
-
-  // 1. Habilita CORS (esto está bien como está)
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-CSRF-Token',
-      'Cache-Control',
-    ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  });
-
-  // 2. Usa cookieParser (esto está bien como está)
-  app.use(cookieParser());
-  if (trustProxy) {
-    const httpAdapter = app.getHttpAdapter();
-    const instance: unknown =
-      typeof httpAdapter.getInstance === 'function'
-        ? httpAdapter.getInstance()
-        : undefined;
-    if (canSetTrustProxy(instance)) {
-      instance.set('trust proxy', 1);
-    }
-  }
-  if (csrfEnabled) app.use(csrfMiddleware());
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: false,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.setGlobalPrefix('api');
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+  app.enableCors();
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Nocturne API')
-    .setDescription('API REST para el sistema Nocturne')
+  // Servir archivos estáticos para subida de imágenes de productos
+  // Se usa __dirname para localizar correctamente la carpeta uploads
+  // tanto en local (dist/src → ../../uploads) como en Render
+  const uploadsDir = join(__dirname, '..', '..', 'uploads');
+  const uploadsDirFallback = join(process.cwd(), 'uploads');
+  const finalUploadsDir = existsSync(uploadsDir) ? uploadsDir : uploadsDirFallback;
+  if (!existsSync(finalUploadsDir)) {
+    mkdirSync(finalUploadsDir, { recursive: true });
+  }
+  console.log(`Serving uploads from: ${finalUploadsDir}`);
+  app.use('/uploads', express.static(finalUploadsDir));
+
+  // Configuración de Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Licorería La Fortaleza API')
+    .setDescription('API Rest para gestión de licorería La Fortaleza - SIS257')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' })
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
 
-  const port = Number(process.env.PORT) || 3000;
-  const host = process.env.HOST || '0.0.0.0';
-  await app.listen(port, host);
-  const baseUrl = await app.getUrl();
-  console.log(`App corriendo en: ${baseUrl}`);
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, documentFactory);
+
+  await app.listen(process.env.PORT ?? 3000);
+  console.log(`La Fortaleza API corriendo en ${await app.getUrl()}`);
+  console.log(`Swagger UI disponible en: http://localhost:3000/api`);
 }
-bootstrap().catch((error) => {
-  console.error('Error al iniciar la aplicación', error);
-  process.exitCode = 1;
-});
+bootstrap();

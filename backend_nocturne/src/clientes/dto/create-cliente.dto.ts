@@ -1,28 +1,37 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateClienteDto {
-  @IsNotEmpty()
+  @ApiProperty({ example: 'María' })
   @IsString()
   nombre: string;
 
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-
-  @IsNotEmpty()
+  @ApiProperty({ example: 'García' })
   @IsString()
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
-  password: string;
+  apellido: string;
 
+  @ApiProperty({ example: '12345678', required: false })
+  @IsString()
   @IsOptional()
-  @IsString()
-  direccion?: string;
+  ciNit?: string;
 
-  @IsOptional()
+  @ApiProperty({ example: '70098765', required: false })
   @IsString()
+  @IsOptional()
   telefono?: string;
 
-  @IsOptional()
+  @ApiProperty({ example: 'maria@email.com', required: false })
   @IsString()
-  ci?: string;
+  @IsOptional()
+  correo?: string;
+
+  @ApiProperty({ example: 'Calle Bolívar #456', required: false })
+  @IsString()
+  @IsOptional()
+  direccion?: string;
+
+  @ApiProperty({ example: true, required: false })
+  @IsBoolean()
+  @IsOptional()
+  estado?: boolean;
 }

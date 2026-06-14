@@ -1,65 +1,86 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Producto } from './entities/producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Producto } from './entities/producto.entity';
-import { Not, Repository } from 'typeorm';
+import { ComboProducto } from './entities/combo-producto.entity';
 
 @Injectable()
 export class ProductosService {
   constructor(
     @InjectRepository(Producto)
-    private productosRepository: Repository<Producto>,
+    private readonly productoRepository: Repository<Producto>,
+    @InjectRepository(ComboProducto)
+    private readonly comboProductoRepository: Repository<ComboProducto>,
   ) {}
 
-  // Crea un producto verificando que el nombre sea único dentro de la categoría
-  async create(createProductoDto: CreateProductoDto): Promise<Producto> {
-    if (createProductoDto.nombre) {
-      const repetido = await this.productosRepository.findOne({
-        where: {
-          nombre: createProductoDto.nombre,
-          categoriaId: createProductoDto.categoriaId,
-        },
-        withDeleted: true,
-      });
+  private synchronizePrices(producto: any) {
+    const unidades = Number(producto.unidadesPorCaja || 6);
 
-      if (repetido) {
-        throw new ConflictException(
-          'El nombre de producto ya está en uso en esta categoría',
-        );
-      }
+    // 1. Sync from old fields if new fields are not set or are zero
+    if (producto.precioCompra !== undefined && (!producto.precioCompraUnidad || Number(producto.precioCompraUnidad) === 0)) {
+      producto.precioCompraUnidad = Number(producto.precioCompra);
+    }
+    if (producto.precioVenta !== undefined && (!producto.precioVentaUnidad || Number(producto.precioVentaUnidad) === 0)) {
+      producto.precioVentaUnidad = Number(producto.precioVenta);
     }
 
-    const producto = this.productosRepository.create();
-    producto.nombre = createProductoDto.nombre;
-    producto.descripcion = createProductoDto.descripcion ?? null;
+    // 2. Sync to old fields if new fields are modified
+    if (producto.precioCompraUnidad !== undefined) {
+      producto.precioCompra = Number(producto.precioCompraUnidad);
+    }
+    if (producto.precioVentaUnidad !== undefined) {
+      producto.precioVenta = Number(producto.precioVentaUnidad);
+    }
 
-    producto.precio = createProductoDto.precio;
-    producto.stock = createProductoDto.stock;
-    producto.imagenUrl = createProductoDto.imagenUrl ?? null;
-    producto.categoriaId = createProductoDto.categoriaId;
-    producto.activo = createProductoDto.activo ?? true;
+    // 3. Compute box prices if zero or empty
+    if (!producto.precioCompraCaja || Number(producto.precioCompraCaja) === 0) {
+      producto.precioCompraCaja = Number(producto.precioCompraUnidad || 0) * unidades;
+    }
+    if (!producto.precioVentaCaja || Number(producto.precioVentaCaja) === 0) {
+      producto.precioVentaCaja = Number(producto.precioVentaUnidad || 0) * unidades;
+    }
 
-    return this.productosRepository.save(producto);
+    // Also keep precioCaja synchronized for backward compatibility
+    producto.precioCaja = Number(producto.precioVentaCaja);
   }
 
-  // Lista todos los productos junto a su categoría
+  async create(createProductoDto: CreateProductoDto & { items?: { productoId: number; cantidad: number }[] }): Promise<Producto> {
+    const { items, ...prodData } = createProductoDto;
+    const producto = this.productoRepository.create({
+      vendePorUnidad: true,
+      vendePorCaja: true,
+      unidadesPorCaja: 6,
+      ...prodData,
+    });
+    this.synchronizePrices(producto);
+    const saved = await this.productoRepository.save(producto);
+
+    if (saved.esCombo && items && items.length > 0) {
+      for (const item of items) {
+        const comboItem = this.comboProductoRepository.create({
+          comboId: saved.id,
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+        });
+        await this.comboProductoRepository.save(comboItem);
+      }
+    }
+    return saved;
+  }
+
   async findAll(): Promise<Producto[]> {
-    return this.productosRepository.find({
-      relations: ['categoria'],
-      order: { fechaCreacion: 'DESC' },
+    return this.productoRepository.find({
+      relations: ['categoria', 'marca', 'proveedor', 'promocion'],
+      order: { nombre: 'ASC' },
     });
   }
 
-  // Obtiene un producto por ID o lanza error si no existe
   async findOne(id: number): Promise<Producto> {
-    const producto = await this.productosRepository.findOne({
+    const producto = await this.productoRepository.findOne({
       where: { id },
-      relations: ['categoria'],
+      relations: ['categoria', 'marca', 'proveedor', 'promocion'],
     });
     if (!producto) {
       throw new NotFoundException(`Producto con ID ${id} no encontrado`);
@@ -67,95 +88,59 @@ export class ProductosService {
     return producto;
   }
 
-  // Actualiza atributos del producto respetando la unicidad por categoría
-  async update(
-    id: number,
-    updateProductoDto: UpdateProductoDto,
-  ): Promise<Producto> {
-    const productoActual = await this.productosRepository.findOne({
-      where: { id },
+  async getComboItems(comboId: number): Promise<ComboProducto[]> {
+    return this.comboProductoRepository.find({
+      where: { comboId },
+      relations: ['producto', 'producto.categoria', 'producto.marca'],
     });
-    if (!productoActual) {
-      throw new NotFoundException('Producto no encontrado');
-    }
-
-    if (updateProductoDto.nombre) {
-      const categoriaParaValidar =
-        updateProductoDto.categoriaId ?? productoActual.categoriaId;
-      const repetido = await this.productosRepository.findOne({
-        where: {
-          nombre: updateProductoDto.nombre,
-          categoriaId: categoriaParaValidar,
-          id: Not(id),
-        },
-        withDeleted: true,
-      });
-
-      if (repetido) {
-        throw new ConflictException(
-          'El nombre de producto ya está en uso en esta categoría',
-        );
-      }
-    }
-
-    const partial: Partial<Producto> = {};
-    if (updateProductoDto.nombre !== undefined) {
-      partial.nombre = updateProductoDto.nombre;
-    }
-    if (updateProductoDto.descripcion !== undefined) {
-      partial.descripcion = updateProductoDto.descripcion;
-    }
-
-    if (updateProductoDto.precio !== undefined) {
-      partial.precio = updateProductoDto.precio;
-    }
-    if (updateProductoDto.stock !== undefined) {
-      partial.stock = updateProductoDto.stock;
-    }
-    if (updateProductoDto.imagenUrl !== undefined) {
-      partial.imagenUrl = updateProductoDto.imagenUrl;
-    }
-    if (updateProductoDto.categoriaId !== undefined) {
-      partial.categoriaId = updateProductoDto.categoriaId;
-    }
-    if (updateProductoDto.activo !== undefined) {
-      partial.activo = updateProductoDto.activo;
-    }
-
-    const productoActualizado = this.productosRepository.merge(
-      productoActual,
-      partial,
-    );
-
-    return this.productosRepository.save(productoActualizado);
   }
 
-  // Realiza soft delete del producto seleccionado
+  async update(id: number, updateProductoDto: UpdateProductoDto & { items?: { productoId: number; cantidad: number }[] }): Promise<Producto> {
+    const { items, ...prodData } = updateProductoDto;
+    const producto = await this.findOne(id);
+    Object.assign(producto, prodData);
+    this.synchronizePrices(producto);
+    const saved = await this.productoRepository.save(producto);
+
+    if (saved.esCombo && items) {
+      // Borrar antiguos componentes
+      await this.comboProductoRepository.delete({ comboId: saved.id });
+      // Guardar nuevos componentes
+      for (const item of items) {
+        const comboItem = this.comboProductoRepository.create({
+          comboId: saved.id,
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+        });
+        await this.comboProductoRepository.save(comboItem);
+      }
+    }
+    return saved;
+  }
+
   async remove(id: number): Promise<void> {
     const producto = await this.findOne(id);
-    await this.productosRepository.softRemove(producto);
+    await this.productoRepository.softRemove(producto);
   }
 
-  async adjustStock(id: number, delta: number): Promise<Producto> {
-    if (!Number.isFinite(delta) || !Number.isInteger(delta)) {
-      throw new ConflictException('El ajuste de stock debe ser un número entero');
-    }
+  async buscar(termino: string): Promise<Producto[]> {
+    return this.productoRepository
+      .createQueryBuilder('producto')
+      .leftJoinAndSelect('producto.categoria', 'categoria')
+      .leftJoinAndSelect('producto.marca', 'marca')
+      .leftJoinAndSelect('producto.promocion', 'promocion')
+      .where('producto.nombre ILIKE :termino', { termino: `%${termino}%` })
+      .orWhere('producto.codigo ILIKE :termino', { termino: `%${termino}%` })
+      .getMany();
+  }
 
-    return this.productosRepository.manager.transaction(async (manager) => {
-      const repo = manager.getRepository(Producto);
-      const producto = await repo.findOne({
-        where: { id },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!producto) {
-        throw new NotFoundException(`Producto con ID ${id} no encontrado`);
-      }
-
-      const nuevoStock = Math.max(0, Number(producto.stock) + Number(delta));
-      producto.stock = nuevoStock;
-
-      return repo.save(producto);
-    });
+  async getBajoStock(): Promise<Producto[]> {
+    return this.productoRepository
+      .createQueryBuilder('producto')
+      .leftJoinAndSelect('producto.categoria', 'categoria')
+      .leftJoinAndSelect('producto.marca', 'marca')
+      .where('producto.stock <= producto.stockMinimo')
+      .andWhere('producto.estado = true')
+      .getMany();
   }
 }

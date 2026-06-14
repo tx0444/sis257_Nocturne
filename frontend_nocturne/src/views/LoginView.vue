@@ -1,57 +1,91 @@
 <template>
-  <div class="container py-5" style="max-width: 420px">
-    <div class="card card-nocturne p-4">
-      <h1 class="h4 font-display text-gold text-center mb-1">NOCTURNE</h1>
-      <p class="text-center text-secondary small mb-4">Acceso al panel administrativo</p>
-
-      <div v-if="error" class="alert alert-danger small">{{ error }}</div>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="text-center mb-4">
+        <img src="/logo_owl.png" alt="Nocturne Logo" style="height: 2.5em; width: auto; object-fit: contain; margin-right: 12px; border-radius: 50%;" />
+        <h3 class="mt-2" style="color: var(--accent); font-weight: 800; letter-spacing: 1px;">NOCTURNE:COLD STORAGE</h3>
+        <p class="text-secondary" style="font-size: 0.8rem;">Sistema de Gestión de Licorería</p>
+      </div>
 
       <form @submit.prevent="onSubmit">
         <div class="mb-3">
-          <label class="form-label small text-gold">Email</label>
-          <input v-model.trim="email" type="email" class="form-control" required />
+          <label class="form-label">Usuario</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background: var(--bg-dark); border-color: var(--border-color); color: var(--text-secondary);">
+              <i class="bi bi-person"></i>
+            </span>
+            <input type="text" class="form-control" v-model="usuario" placeholder="Ingrese su usuario" required />
+          </div>
         </div>
-        <div class="mb-4">
-          <label class="form-label small text-gold">Contrasena</label>
-          <input v-model="password" type="password" class="form-control" required />
+
+        <div class="mb-3">
+          <label class="form-label">Contraseña</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background: var(--bg-dark); border-color: var(--border-color); color: var(--text-secondary);">
+              <i class="bi bi-lock"></i>
+            </span>
+            <input type="password" class="form-control" v-model="clave" placeholder="Ingrese su contraseña" required />
+          </div>
         </div>
-        <button class="btn btn-gold w-100" type="submit" :disabled="loading">
-          {{ loading ? 'Entrando...' : 'Iniciar sesion' }}
+
+        <p v-if="error" class="text-danger text-center" style="font-size: 0.85rem;">
+          <i class="bi bi-exclamation-circle"></i> Usuario y/o contraseña incorrectos
+        </p>
+
+        <button type="submit" class="btn btn-primary-custom w-100 py-2 mt-2" :disabled="loading">
+          <span v-if="loading"><i class="bi bi-arrow-repeat spin"></i> Verificando...</span>
+          <span v-else><i class="bi bi-box-arrow-in-right"></i> Ingresar</span>
         </button>
       </form>
 
-      <p class="small text-secondary mt-4 mb-0 text-center">
-        Demo admin: <code>admin@nocturne.bo</code> / <code>Nocturne2026!</code>
-      </p>
+      <div class="text-center mt-3">
+        <router-link to="/register" class="text-accent" style="font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+          ¿No tienes una cuenta? Regístrate aquí
+        </router-link>
+      </div>
+
+      <div class="text-center mt-2">
+        <router-link to="/" class="text-secondary" style="font-size: 0.8rem; text-decoration: none;">
+          <i class="bi bi-arrow-left"></i> Volver al Catálogo
+        </router-link>
+      </div>
+
+      <div class="text-center mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
+        <small class="text-secondary"><img src="/logo_owl.png" alt="Nocturne Logo" style="height: 2.5em; width: auto; object-fit: contain; margin-right: 12px; border-radius: 50%;" /> SIS257 - Proyecto Académico</small>
+      </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuth } from '@/composables/useAuth';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 
-const email = ref('admin@nocturne.bo');
-const password = ref('Nocturne2026!');
-const error = ref('');
-const loading = ref(false);
-const { login } = useAuth();
-const router = useRouter();
-const route = useRoute();
+const usuario = ref('')
+const clave = ref('')
+const error = ref(false)
+const loading = ref(false)
+const authStore = useAuthStore()
 
-async function onSubmit() {
-  error.value = '';
-  loading.value = true;
-  try {
-    await login(email.value, password.value);
-    const redirect = route.query.redirect || '/panel';
-    router.push(String(redirect));
-  } catch (e) {
-    const message = e.response?.data?.message;
-    error.value = Array.isArray(message) ? message.join(', ') : message || 'Credenciales invalidas';
-  } finally {
-    loading.value = false;
-  }
+function onSubmit() {
+  error.value = false
+  loading.value = true
+  authStore.login(usuario.value, clave.value)
+    .catch(() => {
+      error.value = true
+    })
+    .finally(() => {
+      loading.value = false
+    })
 }
 </script>
+
+<style scoped>
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

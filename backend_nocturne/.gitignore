@@ -36,25 +36,12 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
+.env
 .env.development.local
 .env.test.local
 .env.production.local
-.env.pruebas
-.env.produccion
-.env
+.env.local
+*.copy
 
-# temp directory
-.temp
-.tmp
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
 
-# guia seed (semilla usuario inicial)
-SEED_INSTRUCTIONS.md
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

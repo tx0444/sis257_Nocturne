@@ -1,103 +1,136 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  IsNotEmpty,
-  IsNumber,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-  ValidateNested,
-  IsArray,
-} from 'class-validator';
-import { MetodoPago } from '../entities/venta.entity';
+import { IsNumber, IsArray, ValidateNested, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-const toDateOrUndefined = (value: unknown): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  return undefined;
-};
-
-const toTrimmedStringOrNull = (value: unknown): string | null => {
-  if (value === undefined || value === null) return null;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    const coerced = value.toString().trim();
-    return coerced.length > 0 ? coerced : null;
-  }
-  if (typeof value === 'bigint') return value.toString();
-  return null;
-};
-
-class VentaItemDto {
+export class CreateComboComponenteDto {
+  @ApiProperty({ example: 2 })
   @IsNumber()
   productoId: number;
 
+  @ApiProperty({ example: 1 })
   @IsNumber()
-  @Min(1)
   cantidad: number;
 }
 
+export class CreateDetalleVentaDto {
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  productoId: number;
+
+  @ApiProperty({ example: 3 })
+  @IsNumber()
+  cantidad: number;
+
+  @ApiProperty({ example: 12.00 })
+  @IsNumber()
+  precio: number;
+
+  @ApiPropertyOptional({ example: 'Unidad' })
+  @IsString()
+  @IsOptional()
+  tipoVenta?: string;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  conHielo?: boolean;
+
+  @ApiPropertyOptional({ type: [CreateComboComponenteDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateComboComponenteDto)
+  componentes?: CreateComboComponenteDto[];
+}
+
+export class CreatePagoVentaDto {
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  metodoPagoId: number;
+
+  @ApiProperty({ example: 36.00 })
+  @IsNumber()
+  monto: number;
+
+  @ApiPropertyOptional({ example: 50.00 })
+  @IsNumber()
+  @IsOptional()
+  montoRecibido?: number;
+
+  @ApiPropertyOptional({ example: 14.00 })
+  @IsNumber()
+  @IsOptional()
+  cambio?: number;
+}
+
 export class CreateVentaDto {
+  @ApiPropertyOptional({ example: 1, description: 'ID del cliente. Si se omite, se usa Consumidor Final (NIT: 0)' })
+  @IsNumber()
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'El ID del empleado debe ser un número' })
-  readonly empleadoId?: number | null;
+  clienteId?: number;
 
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  usuarioId: number;
+
+  @ApiPropertyOptional({ example: '/uploads/comprobantes/qr-12345.jpg', description: 'URL del comprobante QR de pago' })
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'El ID del cliente debe ser un número' })
-  readonly clienteId?: number | null;
+  comprobanteQr?: string;
 
+  @ApiPropertyOptional({ example: 'Av. Las Americas #123', description: 'Dirección de entrega' })
+  @IsString()
   @IsOptional()
-  @IsString({ message: 'El CI del cliente debe ser un texto' })
-  @MaxLength(20)
-  @Transform(({ value }) => toTrimmedStringOrNull(value))
-  readonly clienteCi?: string | null;
+  direccionEntrega?: string;
 
+  @ApiPropertyOptional({ example: 'Tienda', description: 'Tipo de entrega: Tienda o Delivery' })
+  @IsString()
   @IsOptional()
-  @Transform(({ value }) => toDateOrUndefined(value))
-  readonly fechaVenta?: Date;
+  tipoEntrega?: string;
 
+  @ApiPropertyOptional({ example: 'Av. Las Americas #123', description: 'Dirección de delivery' })
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  readonly total?: number;
+  direccion?: string;
 
-  @IsNotEmpty({ message: 'El método de pago es requerido' })
-  @IsEnum(MetodoPago, {
-    message: 'El método de pago debe ser: efectivo, tarjeta, transferencia o qr',
-  })
-  readonly metodoPago: MetodoPago;
-
+  @ApiPropertyOptional({ example: 'Frente a la plaza principal', description: 'Referencia de delivery' })
+  @IsString()
   @IsOptional()
-  @IsString({ message: 'El nombre del cliente debe ser un texto' })
-  @MaxLength(100)
-  @Transform(({ value }) => toTrimmedStringOrNull(value))
-  readonly clienteNombre?: string | null;
+  referencia?: string;
 
+  @ApiPropertyOptional({ example: '71234567', description: 'Teléfono de contacto para delivery' })
+  @IsString()
   @IsOptional()
-  @IsString({ message: 'Las notas deben ser un texto' })
-  @Transform(({ value }) => toTrimmedStringOrNull(value))
-  readonly notas?: string | null;
+  telefonoContacto?: string;
 
+  @ApiPropertyOptional({ example: 10.00, description: 'Costo del delivery' })
+  @IsNumber()
   @IsOptional()
+  costoDelivery?: number;
+
+  @ApiPropertyOptional({ example: -19.0429, description: 'Latitud de la ubicación de entrega' })
+  @IsNumber()
+  @IsOptional()
+  latitud?: number;
+
+  @ApiPropertyOptional({ example: -65.2554, description: 'Longitud de la ubicación de entrega' })
+  @IsNumber()
+  @IsOptional()
+  longitud?: number;
+
+  @ApiProperty({ type: [CreateDetalleVentaDto] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => VentaItemDto)
-  readonly items?: VentaItemDto[];
+  @Type(() => CreateDetalleVentaDto)
+  detalles: CreateDetalleVentaDto[];
 
+  @ApiProperty({ type: [CreatePagoVentaDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePagoVentaDto)
+  pagos: CreatePagoVentaDto[];
+
+  @ApiPropertyOptional({ example: 'Pendiente', description: 'Estado inicial de la venta' })
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  readonly montoRecibido?: number;
+  estado?: string;
 }

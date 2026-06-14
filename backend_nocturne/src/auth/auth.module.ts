@@ -1,26 +1,27 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { EmpleadosModule } from 'src/empleados/empleados.module';
-import { ClientesModule } from 'src/clientes/clientes.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { UsuariosModule } from '../usuarios/usuarios.module';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
-    EmpleadosModule,
-    ClientesModule,
-    PassportModule,
-    JwtModule.register({
-      // Configuración base, pero usaremos secretos específicos en cada strategy
-      signOptions: { expiresIn: '15m' },
+    UsuariosModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'defaultSecret',
+        signOptions: { expiresIn: '1d' },
+      }),
     }),
   ],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
-  exports: [AuthService],
+  exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}
