@@ -1,0 +1,28 @@
+services:
+
+  backend:
+    build:
+      context: ./backend_nocturnecoldstorage
+      dockerfile: Dockerfile
+    image: backend-nocturnecoldstorage
+    container_name: backend_nocturnecoldstorage
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: sis257_nocturnecoldstorage
+      JWT_SECRET: nocturnecoldstorage_secret_key_sis257_2024
+
+  frontend:
+    build:
+      context: ./frontend_nocturnecoldstorage
+      dockerfile: Dockerfile
+    image: frontend-nocturnecoldstorage
+    container_name: frontend_nocturnecoldstorage
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
