@@ -381,8 +381,8 @@ Historial estricto de auditoría para la modificación de clientes y ventas.
 ## Estructura del Proyecto
 
 ```
-sis257_nocturnecoldstorage/
-├── backend_nocturnecoldstorage/              # Servidor API NestJS
+sis257_Nocturne/
+├── backend_nocturne/              # Servidor API NestJS
 │   ├── src/
 │   │   ├── auditoria/                # Módulo de logs de auditoría
 │   │   ├── auth/                     # Autenticación JWT y Guards de Rol
@@ -401,7 +401,7 @@ sis257_nocturnecoldstorage/
 │   ├── public/                       # Carpeta pública para multimedia subida
 │   └── package.json                  # Scripts y dependencias del backend
 │
-├── frontend_nocturnecoldstorage/             # Cliente Web Vue 3
+├── frontend_nocturne/             # Cliente Web Vue 3
 │   ├── src/
 │   │   ├── assets/                   # Estilos CSS globales y variables de tema
 │   │   ├── components/               # Layouts dinámicos por rol
@@ -429,26 +429,22 @@ sis257_nocturnecoldstorage/
 ### Configuración del Backend
 1. Ingrese a la carpeta del backend:
    ```bash
-   cd backend_nocturnecoldstorage
+   cd backend_nocturne
    ```
 2. Instale las dependencias necesarias:
    ```bash
    npm install
    ```
-3. Cree un archivo `.env` en la raíz de `backend_nocturnecoldstorage` basándose en el ejemplo disponible y configure sus variables de conexión a base de datos y clave secreta JWT:
+3. Cree un archivo `.env` en la raíz de `backend_nocturne` basándose en el ejemplo disponible y configure sus variables de conexión a base de datos y clave secreta JWT:
    ```env
    DB_HOST=localhost
    DB_PORT=5432
    DB_USERNAME=postgres
    DB_PASSWORD=su_contraseña
-   DB_NAME=sis257_nocturnecoldstorage
+   DB_NAME=sis257_Nocturne
    JWT_SECRET=su_clave_secreta_jwt
    ```
-4. Ejecute el seeder para poblar la base de datos con los datos iniciales y más de 50 licores premium reales:
-   ```bash
-   npm run seed
-   ```
-5. Inicie el servidor de desarrollo del backend:
+4. Inicie el servidor de desarrollo del backend (el seeder se ejecutará automáticamente en el primer inicio para poblar la base de datos con roles, usuarios y más de 50 licores premium reales):
    ```bash
    npm run start:dev
    ```
@@ -458,7 +454,7 @@ El servidor estará disponible en la dirección: **http://localhost:3000/api/v1*
 ### Configuración del Frontend
 1. Ingrese a la carpeta del frontend en una nueva pestaña del terminal:
    ```bash
-   cd frontend_nocturnecoldstorage
+   cd frontend_nocturne
    ```
 2. Instale las dependencias del cliente:
    ```bash

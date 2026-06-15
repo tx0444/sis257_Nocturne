@@ -36,7 +36,7 @@ export class ProductosController {
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: (req, file, callback) => {
-        const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'video');
+        const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'video');
         if (!existsSync(targetDir)) {
           mkdirSync(targetDir, { recursive: true });
         }
@@ -59,7 +59,7 @@ export class ProductosController {
     if (!file) {
       return { url: '' };
     }
-    const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'video');
+    const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'video');
     
     // Clean old hero videos to avoid cluttering the public/video folder
     try {
@@ -92,7 +92,7 @@ export class ProductosController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Restablecer el video de fondo predeterminado (Solo Admin)' })
   restoreHero() {
-    const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'video');
+    const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'video');
     
     // Clean custom hero videos to avoid cluttering
     try {
@@ -139,7 +139,7 @@ export class ProductosController {
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: (req, file, callback) => {
-        const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'qr');
+        const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'qr');
         if (!existsSync(targetDir)) {
           mkdirSync(targetDir, { recursive: true });
         }
@@ -162,7 +162,7 @@ export class ProductosController {
     if (!file) {
       return { url: '' };
     }
-    const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'qr');
+    const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'qr');
     
     try {
       const files = readdirSync(targetDir);
@@ -193,7 +193,7 @@ export class ProductosController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Restablecer el código QR estático predeterminado (Solo Admin)' })
   restoreQr() {
-    const targetDir = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'qr');
+    const targetDir = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'qr');
     
     try {
       const files = readdirSync(targetDir);
@@ -238,8 +238,8 @@ export class ProductosController {
       destination: (req, file, callback) => {
         const isVideo = file.mimetype.startsWith('video/');
         const targetDir = isVideo 
-          ? join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'videos')
-          : join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'uploads');
+          ? join(process.cwd(), '..', 'frontend_nocturne', 'public', 'videos')
+          : join(process.cwd(), '..', 'frontend_nocturne', 'public', 'uploads');
           
         if (!existsSync(targetDir)) {
           mkdirSync(targetDir, { recursive: true });

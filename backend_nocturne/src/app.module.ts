@@ -48,7 +48,7 @@ import { CajasModule } from './cajas/cajas.module';
       port: parseInt(process.env.DB_PORT || '5432', 10),
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || '123456',
-      database: process.env.DB_NAME || 'sis257_lafortaleza',
+      database: process.env.DB_NAME || 'sis257_nocturnecoldstorage',
       entities: [
         Rol, Usuario, Categoria, Marca, Proveedor, Cliente,
         Producto, Compra, DetalleCompra, Venta, DetalleVenta,

@@ -4,12 +4,12 @@ let path = './src/views/CatalogoView.vue';
 let content = fs.readFileSync(path, 'utf8');
 
 // 1. Initial Replacements
-content = content.replace(/LA FORTALEZA/g, 'NOCTURNE:COLD STORAGE');
+content = content.replace(/NOCTURNE: COLD STORAGE/g, 'NOCTURNE:COLD STORAGE');
 content = content.replace(/<i[^>]*bi-shield-fill[^>]*><\/i>/g, '<img src="/logo_owl.png" alt="Nocturne Logo" style="height: 2.5em; width: auto; object-fit: contain; margin-right: 12px; border-radius: 50%;" />');
 content = content.replace(/<i[^>]*bi-shield[^>]*><\/i>/g, '<img src="/logo_owl.png" alt="Nocturne Logo" style="height: 2.5em; width: auto; object-fit: contain; margin-right: 12px; border-radius: 50%;" />');
 
 // 2. Redesign Hero
-let newHero = \    <!-- SECCIÓN 1 - VIDEO HERO PRINCIPAL -->
+let newHero = \    <!-- SECCIï¿½N 1 - VIDEO HERO PRINCIPAL -->
     <header id="inicio" class="hero-section position-relative d-flex align-items-center">
       <div class="hero-video-container">
         <video
@@ -43,7 +43,7 @@ let newHero = \    <!-- SECCIÓN 1 - VIDEO HERO PRINCIPAL -->
             </p>
             
             <p class="lead text-secondary mb-5" style="max-width: 550px; font-size: 1.05rem; line-height: 1.6;">
-              Descubre la selección más exclusiva de licores nacionales e importados. Una bóveda climatizada que garantiza la máxima calidad para tus celebraciones.
+              Descubre la selecciï¿½n mï¿½s exclusiva de licores nacionales e importados. Una bï¿½veda climatizada que garantiza la mï¿½xima calidad para tus celebraciones.
             </p>
             
             <div class="d-flex flex-wrap gap-3 mt-2">
@@ -52,7 +52,7 @@ let newHero = \    <!-- SECCIÓN 1 - VIDEO HERO PRINCIPAL -->
                 <i class="bi bi-arrow-right fs-5"></i>
               </a>
               <a href="#tienda" class="btn btn-outline-glass px-5 py-3 d-flex align-items-center gap-2 text-decoration-none">
-                <span class="fw-semibold text-white" style="letter-spacing: 1px;">VER CATÁLOGO</span>
+                <span class="fw-semibold text-white" style="letter-spacing: 1px;">VER CATï¿½LOGO</span>
                 <i class="bi bi-grid fs-6 text-gold"></i>
               </a>
             </div>
@@ -69,7 +69,7 @@ let newHero = \    <!-- SECCIÓN 1 - VIDEO HERO PRINCIPAL -->
       </div>
     </header>\;
 
-let regexHero = /<!-- SECCIÓN 1 - VIDEO HERO PRINCIPAL -->[\\s\\S]*?<\/header>/;
+let regexHero = /<!-- SECCIï¿½N 1 - VIDEO HERO PRINCIPAL -->[\\s\\S]*?<\/header>/;
 content = content.replace(regexHero, newHero);
 
 // 3. New Styles

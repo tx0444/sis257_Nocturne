@@ -309,7 +309,7 @@
                   </h3>
                   <p class="text-secondary mb-0" style="font-size: 0.72rem; letter-spacing: 0.5px; line-height: 1.2;">TIENDA INTEGRAL DE BEBIDAS</p>
                   <p class="text-secondary mb-0" style="font-size: 0.65rem; line-height: 1.2;">Calle El Paraiso 123, Sucre - Bolivia</p>
-                  <p class="text-secondary mb-0" style="font-size: 0.6rem; line-height: 1.2;">Tel: +591 75781303 • contacto@lafortaleza.com.bo</p>
+                  <p class="text-secondary mb-0" style="font-size: 0.6rem; line-height: 1.2;">Tel: +591 75781303 • contacto@nocturnecoldstorage.com.bo</p>
                 </div>
                 <div class="invoice-details text-end">
                   <h5 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">FACTURA DE VENTA</h5>

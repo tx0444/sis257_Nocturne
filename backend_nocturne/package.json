@@ -1,7 +1,7 @@
 {
-  "name": "backend-lafortaleza",
+  "name": "backend-nocturnecoldstorage",
   "version": "0.0.1",
-  "description": "API Rest para gestión de licorería La Fortaleza - SIS257",
+  "description": "API Rest para gestión de licorería Nocturne: Cold Storage - SIS257",
   "author": "",
   "private": true,
   "license": "UNLICENSED",

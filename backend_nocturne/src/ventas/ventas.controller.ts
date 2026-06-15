@@ -33,7 +33,7 @@ export class VentasController {
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: (req, file, cb) => {
-        const uploadPath = join(process.cwd(), '..', 'frontend_lafortaleza', 'public', 'uploads', 'comprobantes');
+        const uploadPath = join(process.cwd(), '..', 'frontend_nocturne', 'public', 'uploads', 'comprobantes');
         if (!existsSync(uploadPath)) {
           mkdirSync(uploadPath, { recursive: true });
         }

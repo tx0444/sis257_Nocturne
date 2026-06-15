@@ -5,7 +5,7 @@ const client = new Client({
   port: 5432,
   user: 'postgres',
   password: '123456',
-  database: 'sis257_lafortaleza'
+  database: 'sis257_nocturnecoldstorage'
 });
 
 async function updateDb() {

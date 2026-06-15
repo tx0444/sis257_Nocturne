@@ -125,7 +125,7 @@ export class SeederService implements OnModuleInit {
   }
 
   async seed() {
-    console.log('Iniciando seeder de La Fortaleza...');
+    console.log('Iniciando seeder de Nocturne: Cold Storage...');
 
     // ===== ROLES =====
     let rolAdmin = await this.rolRepo.findOne({ where: { nombre: 'ADMIN' } });
@@ -141,21 +141,21 @@ export class SeederService implements OnModuleInit {
     const adminUser = await this.usuarioRepo.findOne({ where: { usuario: 'admin' } });
     if (!adminUser) {
       await this.usuarioRepo.save(this.usuarioRepo.create({
-        nombre: 'Administrador', apellido: 'Sistema', correo: 'admin@lafortaleza.com',
+        nombre: 'Administrador', apellido: 'Sistema', correo: 'admin@nocturnecoldstorage.com',
         usuario: 'admin', password: 'admin123', estado: true, rolId: rolAdmin.id,
       }));
     }
     const vend1 = await this.usuarioRepo.findOne({ where: { usuario: 'vendedor1' } });
     if (!vend1) {
       await this.usuarioRepo.save(this.usuarioRepo.create({
-        nombre: 'Carlos', apellido: 'Mendoza', correo: 'carlos@lafortaleza.com',
+        nombre: 'Carlos', apellido: 'Mendoza', correo: 'carlos@nocturnecoldstorage.com',
         usuario: 'vendedor1', password: 'vend123', estado: true, rolId: rolVendedor.id,
       }));
     }
     const vend2 = await this.usuarioRepo.findOne({ where: { usuario: 'vendedor2' } });
     if (!vend2) {
       await this.usuarioRepo.save(this.usuarioRepo.create({
-        nombre: 'María', apellido: 'Flores', correo: 'maria@lafortaleza.com',
+        nombre: 'María', apellido: 'Flores', correo: 'maria@nocturnecoldstorage.com',
         usuario: 'vendedor2', password: 'vend123', estado: true, rolId: rolVendedor.id,
       }));
     }
@@ -257,7 +257,7 @@ export class SeederService implements OnModuleInit {
         apellido: 'Ocasional',
         ciNit: '0000000',
         telefono: '00000000',
-        correo: 'ocasional@lafortaleza.com'
+        correo: 'ocasional@nocturnecoldstorage.com'
       }));
     } else {
       // update its name to 'Cliente Ocasional' if it was named 'General'

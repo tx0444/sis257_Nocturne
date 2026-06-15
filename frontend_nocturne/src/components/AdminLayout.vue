@@ -106,7 +106,7 @@
             <span>
               <i class="bi bi-geo-alt-fill text-gold me-1"></i>Calle El Paraiso 123, Sucre - Bolivia &nbsp;|&nbsp;
               <i class="bi bi-telephone-fill text-gold me-1"></i>+591 75781303 &nbsp;|&nbsp;
-              <i class="bi bi-envelope-fill text-gold me-1"></i>contacto@lafortaleza.com.bo
+              <i class="bi bi-envelope-fill text-gold me-1"></i>contacto@nocturnecoldstorage.com.bo
             </span>
           </div>
         </div>

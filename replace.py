@@ -5,11 +5,11 @@ import shutil
 root_dir = r"C:\Users\Tx098\Desktop\presentacionTx\sis257_NocturneTx"
 
 replacements = {
-    "LA FORTALEZA": "NOCTURNE: COLD STORAGE",
-    "La Fortaleza": "Nocturne: Cold Storage",
-    "lafortaleza": "nocturnecoldstorage",
-    "LA_FORTALEZA": "NOCTURNE_COLD_STORAGE",
-    "la_fortaleza": "nocturne_cold_storage"
+    "NOCTURNE: COLD STORAGE": "NOCTURNE: COLD STORAGE",
+    "Nocturne: Cold Storage": "Nocturne: Cold Storage",
+    "nocturnecoldstorage": "nocturnecoldstorage",
+    "NOCTURNE_COLD_STORAGE": "NOCTURNE_COLD_STORAGE",
+    "nocturne_cold_storage": "nocturne_cold_storage"
 }
 
 ignore_dirs = {"node_modules", "dist", ".git", "build"}

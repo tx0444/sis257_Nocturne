@@ -28,8 +28,8 @@ async function bootstrap() {
 
   // Configuración de Swagger
   const config = new DocumentBuilder()
-    .setTitle('Licorería La Fortaleza API')
-    .setDescription('API Rest para gestión de licorería La Fortaleza - SIS257')
+    .setTitle('Licorería Nocturne: Cold Storage API')
+    .setDescription('API Rest para gestión de licorería Nocturne: Cold Storage - SIS257')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' })
     .build();
@@ -38,7 +38,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`La Fortaleza API corriendo en ${await app.getUrl()}`);
+  console.log(`Nocturne: Cold Storage API corriendo en ${await app.getUrl()}`);
   console.log(`Swagger UI disponible en: http://localhost:3000/api`);
 }
 bootstrap();

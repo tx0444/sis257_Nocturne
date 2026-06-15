@@ -740,7 +740,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
       headers: {
         'Accept-Language': 'es',
-        'User-Agent': 'LaFortaleza/1.0'
+        'User-Agent': 'Nocturne/1.0'
       }
     })
     if (res.ok) {
@@ -761,7 +761,7 @@ async function forwardGeocodePos() {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&viewbox=-65.35,-19.12,-65.18,-18.97&bounded=1&limit=1`, {
       headers: {
         'Accept-Language': 'es',
-        'User-Agent': 'LaFortaleza/1.0'
+        'User-Agent': 'Nocturne/1.0'
       }
     })
     if (res.ok) {
@@ -779,7 +779,7 @@ async function forwardGeocodePos() {
         const res2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`, {
           headers: {
             'Accept-Language': 'es',
-            'User-Agent': 'LaFortaleza/1.0'
+            'User-Agent': 'Nocturne/1.0'
           }
         })
         if (res2.ok) {
